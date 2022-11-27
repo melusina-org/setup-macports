@@ -14,4 +14,8 @@ runs:
     - name: 'Install MacPorts'
       run: ${{ github.action_path }}/install_macports ${{ inputs.version }}
       shell: sh
-
+    - name: 'Add MacPorts to PATH'
+      run: >-
+        printf '/opt/local/bin\n' >> $GITHUB_PATH
+        printf '/opt/loca/sbin\n' >> $GITHUB_PATH
+      shell: sh

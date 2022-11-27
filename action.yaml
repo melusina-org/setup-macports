@@ -1,0 +1,17 @@
+name: 'Install MacPorts'
+description: >-
+  Install MacPorts on a Mac OS runner.
+inputs:
+  version:
+    description: >-
+      The MacPorts Version to install.
+    required: true
+    default: '2.8.0'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Install MacPorts'
+      run: ${{ github.action_path }}/install_macports ${{ inputs.version }}
+      shell: sh
+

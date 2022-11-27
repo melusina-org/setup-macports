@@ -1,0 +1,252 @@
+#!/bin/sh
+
+# install_macports — Install MacPorts
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+version='2.8.0'
+
+github_owner='macports'
+github_repo='macports-base'
+
+
+github_api()
+(
+    url()
+    {
+	printf 'https://api.github.com'
+	printf '/%s' "$@"
+    }
+
+    exec curl --silent -H "Accept: application/vnd.github+json" $(url "$@")
+)
+
+extract_releases()
+{
+    github_api repos "${github_owner}" "${github_repo}" releases
+}
+
+transform_releases()
+{
+    python3 -c'
+import json
+import sys
+
+releases = json.loads(sys.stdin.read())
+
+for release in releases:
+  if release["draft"]: continue
+  for asset in release["assets"]:
+    print(f"""{release["tag_name"]}|{release["name"]}|{asset["browser_download_url"]}""")
+'
+}
+
+find_package()
+{
+    python3 -c'
+import json
+import re
+import sys
+
+macos = sys.argv[1]
+tag_name = sys.argv[2]
+
+package_pattern = macos + "[.]pkg$"
+
+releases = json.loads(sys.stdin.read())
+
+package = ":not-found"
+
+for release in releases:
+  if release["draft"]: continue
+  if release["tag_name"] == tag_name:
+    for asset in release["assets"]:
+      if re.search(package_pattern, asset["browser_download_url"]):
+        package = asset["browser_download_url"]
+
+print(package)
+' "$@"
+}
+
+find_macos()
+{
+    python3 -c'
+import json
+import re
+import sys
+macos_names = set()
+releases = json.loads(sys.stdin.read())
+
+def extract_macos_name(download_url):
+  macos_name = download_url
+  macos_name = re.sub(".pkg$", "", macos_name)
+  macos_name = re.sub(".*MacPorts-[0-9._]*-", "", macos_name)
+  macos_name = re.sub("beta[0-9._]*-", "", macos_name)
+  macos_name = re.sub("rc[0-9._]*-", "", macos_name)
+  return macos_name
+
+for release in releases:
+  if release["draft"]: continue
+  for asset in release["assets"]:
+    if re.search(".pkg$", asset["browser_download_url"]):
+       macos_names.add(extract_macos_name(asset["browser_download_url"]))
+
+def fsort(l):
+  l.sort
+  return l
+
+for macos_name in fsort(list(macos_names)):
+  print(macos_name)
+'
+}
+
+fetch_releases()
+{
+    extract_releases | transform_releases
+}
+
+fetch_macos_db()
+{
+    extract_releases | find_macos | sort 
+}
+
+fetch_package()
+{
+    extract_releases | find_package "$@"    
+}
+
+known_macos_db()
+{
+    cat <<'EOF'
+10.10-Yosemite
+10.11-ElCapitan
+10.12-Sierra
+10.13-HighSierra
+10.14-Mojave
+10.15-Catalina
+10.6-SnowLeopard
+10.7-Lion
+10.8-MountainLion
+10.9-Mavericks
+11-BigSur
+12-Monterey
+13-Ventura
+EOF
+}
+
+make_package()
+{
+    local macos version
+    macos="$1"
+    version="$2"
+    known_macos_db | awk -F'-' "-vmacos=${macos}" "-vversion=${version}" '
+$2 == macos {
+  printf("https://github.com/macports/macports-base/releases/download/v%s/MacPorts-%s-%s-%s.pkg", version, version, $1, $2)
+}
+'
+}
+
+probe_macos()
+{
+    {
+	known_macos_db
+	printf 'EOF\n'
+	system_profiler SPSoftwareDataType
+    } | awk -F '-' '
+BEGIN {
+  mode = "readdb"
+}
+
+$0 == "EOF" {
+  mode = "readprofile"
+}
+
+mode == "readdb" {
+  macos[$1] = $2 
+}
+
+/System Version/ {
+  if(match($0, "10[.][0-9]+")) {
+    version = substr($0, RSTART, RLENGTH)
+  }
+  else if(match($0, "[0-9]+[.][0-9]+")) {
+    version = substr($0, RSTART, RLENGTH)
+    gsub("[.][0-9]+*", "", version)
+  }
+
+}
+
+ 
+END {
+  if(version in macos) {
+    print(macos[version])
+  } else {
+    print(":not-found")
+  }
+}
+
+'
+}
+
+usage()
+{
+    cat <<'EOF'
+Usage: install_macos [VERSION]
+ Install MacPorts
+EOF
+}
+
+ensure_macos()
+{
+    case $(uname) in
+	Darwin)
+	    return 0
+	    ;;
+    esac
+
+    1>&2 printf 'Failure: \047%s\047 is not a MacOS platform.\n' $(uname) 
+    exit 1
+}
+
+
+main()
+{
+    local macos version package
+    ensure_macos
+
+    macos=$(probe_macos)
+
+    case "$#" in
+	0)
+	    :
+	    ;;
+	1)
+	    version="$1"
+	    ;;
+	*)
+	    1>&2 printf 'Failure: Too many arguments.\n'
+	    usage
+	    exit 64
+	    ;;
+    esac
+
+    package=$(make_package "${macos}" "${version}")
+
+    curl -L -o "./${package##*/}" "${package}"
+    sudo installer -pkg "./${package##*/}" -target /
+    sudo install -o root -g wheel -m 644 /dev/null /etc/paths.d/900-macports
+    sudo sh -c "printf '/opt/local/bin' > /etc/paths.d/900-macports"
+}
+
+main "$@"
+
+# End of file `install_macports'

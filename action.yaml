@@ -31,6 +31,15 @@ inputs:
       Installation prefix. Currently the only supported value is '/opt/local'
     required: false
     default: '/opt/local'
+outputs:
+  version:
+    value: ${{ steps.store-macports-outputs.outputs.version }}
+    description: >-
+      The MacPorts version installed.
+  prefix:
+    value: ${{ steps.store-macports-outputs.outputs.prefix }}
+    description: >-
+      The installation prefix for the MacPorts installation.
 runs:
   using: 'composite'
   steps:
@@ -63,6 +72,7 @@ runs:
       run: >-
         sudo port install ${{ inputs.ports }}
     - name: 'Store MacPorts Output'
+      id: store-macports-outputs
       shell: sh
       run: |-
         printf 'prefix=/opt/local\n' >> $GITHUB_OUTPUT

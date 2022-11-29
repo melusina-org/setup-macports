@@ -1,0 +1,89 @@
+#!/bin/sh
+
+# configure_macports — Configure MacPorts
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+prefix='/opt/local'
+
+usage()
+{
+    cat <<'EOF'
+Usage: configure_macports
+ Configure MacPorts.
+EOF
+}
+
+unfold()
+{
+    tr '\t ,' '\n\n\n\n' | sed -n -e '
+/^$/b
+p'
+}
+
+enable()
+{
+    sed -e 's/^/+/'
+}
+
+disable()
+{
+    sed -e 's/^/-/'
+}
+
+
+ensure_macos()
+{
+    case $(uname) in
+	Darwin)
+	    return 0
+	    ;;
+    esac
+
+    1>&2 printf 'Failure: \047%s\047 is not a MacOS platform.\n' $(uname) 
+    exit 1
+}
+
+variants_document()
+{
+	unfold < "${prefix}/etc/github/enable" | enable
+	unfold < "${prefix}/etc/github/disable" | disable
+}
+
+sources_document()
+{
+    printf 'rsync://rsync.macports.org/macports/release/tarballs/ports.tar [default]\n'
+    unfold < "${prefix}/etc/github/sources"
+}
+
+main()
+{
+    ensure_macos
+
+    case "$#" in
+	0)
+	    :
+	    ;;
+	*)
+	    1>&2 printf 'Failure: Too many arguments.\n'
+	    usage
+	    exit 64
+	    ;;
+    esac
+
+    variants_document > "${prefix}/etc/macports/variants.conf"
+    sources_document > "${prefix}/etc/macports/sources.conf"
+}
+
+main "$@"
+
+# End of file `configure_macports'

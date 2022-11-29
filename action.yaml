@@ -7,20 +7,63 @@ inputs:
       The MacPorts Version to install.
     required: true
     default: '2.8.0'
-
+  enable:
+    description: >-
+      List of variants to globally enable. The list is encoded as
+      words separated by whitespace.
+    required: false
+  disable:
+    description: >-
+      List of variants to globally disable. The list is encoded as
+      words separated by whitespace.
+    required: false
+  sources:
+    description: >-
+      List of additional ports sources. The list is encoded as a list
+      of lines.
+    required: false
+  ports:
+    description: >-
+      List of ports to install. 
+    required: false
+  prefix:
+    description: >-
+      Installation prefix. Currently the only supported value is '/opt/local'
+    required: false
+    default: '/opt/local'
 runs:
   using: 'composite'
   steps:
-    - name: 'Install MacPorts'
-      run: ${{ github.action_path }}/install_macports ${{ inputs.version }}
+    - name: 'Validate Inputs'
       shell: sh
+      run: |
+        ${{ github.action_path }}/validate_prefix "${{ inputs.prefix }}"
+    - name: 'Install MacPorts'
+      shell: sh
+      run: ${{ github.action_path }}/install_macports ${{ inputs.version }}
+    - name: 'Write Configuration files'
+      shell: sh
+      run: |
+        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/enable" "${{ inputs.enable }}"
+        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/disable" "${{ inputs.disable }}"
+        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/sources" "${{ inputs.sources }}"
+        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/ports" "${{ inputs.ports }}"
+    - name: 'Configure MacPorts'
+      shell: sh
+      run: |
+        sudo ${{ github.action_path }}/configure_macports
     - name: 'Add MacPorts to PATH'
       shell: sh
-      run: >-
+      run: |
         printf '/opt/local/bin\n' >> $GITHUB_PATH
-        printf '/opt/loca/sbin\n' >> $GITHUB_PATH
-    - name: 'Store MacPorts Output'
+        printf '/opt/local/sbin\n' >> $GITHUB_PATH
+    - name: 'Install Additional Ports'
+      if: (inputs.ports != '')
       shell: sh
       run: >-
+        sudo port install ${{ inputs.ports }}
+    - name: 'Store MacPorts Output'
+      shell: sh
+      run: |-
         printf 'prefix=/opt/local\n' >> $GITHUB_OUTPUT
         printf 'version=%s\n' "${{ inputs.version }}" >> $GITHUB_OUTPUT

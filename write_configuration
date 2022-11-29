@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# write_configuration — Write Configuration
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+usage()
+{
+    cat <<'EOF'
+Usage: write_configuration PATHNAME CONTENTS
+ Write configuration CONTENTS to PATHNAME.
+EOF
+}
+
+main()
+{
+    local filename contents dirname
+
+    case "$#" in
+	2)
+	    :
+	    ;;
+	*)
+	    1>&2 printf 'Failure: Wrong number of arguments.\n'
+	    usage
+	    exit 64
+	    ;;
+    esac
+
+    filename="$1"
+    contents="$2"
+    shift 2
+
+    dirname=$(dirname "${filename}")
+
+    if ! [ -d "${dirname}" ]; then
+	install -d -o root -g wheel -m 700 "${dirname}"
+    fi
+
+    install -o root -g wheel -m 644 /dev/null "${filename}"
+    printf '%s' "${contents}" > "${filename}"
+}
+
+main "$@"
+
+# End of file `write_configuration'

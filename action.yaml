@@ -7,25 +7,37 @@ inputs:
       The MacPorts Version to install.
     required: true
     default: '2.8.0'
-  enable:
+  variants:
     description: >-
-      List of variants to globally enable. The list is encoded as
-      words separated by whitespace.
-    required: false
-  disable:
-    description: >-
-      List of variants to globally disable. The list is encoded as
-      words separated by whitespace.
-    required: false
+      Pathname of the variants configuration file to use.
+      If the no file exists under this pathname, an information
+      message is printed and the variants file installed by MacPorts
+      is left untouched.
+
+      See Also: variants.conf(5)
+    required: true
+    default: '.github/gha-install-macports/variants.conf'
   sources:
     description: >-
-      List of additional ports sources. The list is encoded as a list
-      of lines.
-    required: false
+      Pathname of the sources configuration file to use.
+      If the no file exists under this pathname, an information
+      message is printed and the variants file installed by MacPorts
+      is left untouched.
+
+      See Also: sources.conf(5)
+    required: true
+    default: '.github/gha-install-macports/sources.conf'
   ports:
     description: >-
-      List of ports to install. 
-    required: false
+      Pathname of the ports configuration file to use.
+
+      Each line in the file is a port specification for the port
+      install action.
+
+      If the no file exists under this pathname, an information
+      message is printed and no supplementary port is installed.
+    required: true
+    default: '.github/gha-install-macports/ports.conf'
   prefix:
     description: >-
       Installation prefix. Currently the only supported value is '/opt/local'
@@ -53,10 +65,11 @@ runs:
     - name: 'Write Configuration files'
       shell: sh
       run: |
-        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/enable" "${{ inputs.enable }}"
-        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/disable" "${{ inputs.disable }}"
-        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/sources" "${{ inputs.sources }}"
-        sudo ${{ github.action_path }}/write_configuration "${{ inputs.prefix }}/etc/github/ports" "${{ inputs.ports }}"
+        sudo ${{ github.action_path }}/write_configuration -S "${{ inputs.prefix }}/etc/gha-install-macports/version.conf" "${{ inputs.version }}"
+        sudo ${{ github.action_path }}/write_configuration -P "${{ inputs.prefix }}/etc/gha-install-macports/variants.conf" "${{ inputs.variants }}"
+        sudo ${{ github.action_path }}/write_configuration -P "${{ inputs.prefix }}/etc/gha-install-macports/sources.conf" "${{ inputs.sources }}"
+        sudo ${{ github.action_path }}/write_configuration -P "${{ inputs.prefix }}/etc/gha-install-macports/ports.conf" "${{ inputs.ports }}"
+        sudo ${{ github.action_path }}/write_configuration -S "${{ inputs.prefix }}/etc/gha-install-macports/prefix.conf" "${{ inputs.prefix }}"
     - name: 'Configure MacPorts'
       shell: sh
       run: |
@@ -64,16 +77,18 @@ runs:
     - name: 'Add MacPorts to PATH'
       shell: sh
       run: |
-        printf '/opt/local/bin\n' >> $GITHUB_PATH
-        printf '/opt/local/sbin\n' >> $GITHUB_PATH
+        printf '${{ inputs.prefix }}/bin\n' >> $GITHUB_PATH
+        printf '${{ inputs.prefix }}/sbin\n' >> $GITHUB_PATH
     - name: 'Install Additional Ports'
       if: (inputs.ports != '')
       shell: sh
-      run: >-
-        sudo port install ${{ inputs.ports }}
+      run: |
+        if [ -f "${{ inputs.ports }}" ]; then
+          sudo xargs port install < "${{ inputs.ports }}"
+        fi
     - name: 'Store MacPorts Output'
       id: store-macports-outputs
       shell: sh
       run: |-
-        printf 'prefix=/opt/local\n' >> $GITHUB_OUTPUT
+        printf 'prefix=%s\n' "${{ inputs.prefix }}" >> $GITHUB_OUTPUT
         printf 'version=%s\n' "${{ inputs.version }}" >> $GITHUB_OUTPUT

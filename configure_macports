@@ -23,48 +23,6 @@ Usage: configure_macports
 EOF
 }
 
-unfold()
-{
-    tr '\t ,' '\n\n\n\n' | sed -n -e '
-/^$/b
-p'
-}
-
-enable()
-{
-    sed -e 's/^/+/'
-}
-
-disable()
-{
-    sed -e 's/^/-/'
-}
-
-
-ensure_macos()
-{
-    case $(uname) in
-	Darwin)
-	    return 0
-	    ;;
-    esac
-
-    1>&2 printf 'Failure: \047%s\047 is not a MacOS platform.\n' $(uname) 
-    exit 1
-}
-
-variants_document()
-{
-	unfold < "${prefix}/etc/github/enable" | enable
-	unfold < "${prefix}/etc/github/disable" | disable
-}
-
-sources_document()
-{
-    printf 'rsync://rsync.macports.org/macports/release/tarballs/ports.tar [default]\n'
-    unfold < "${prefix}/etc/github/sources"
-}
-
 main()
 {
     ensure_macos
@@ -80,8 +38,13 @@ main()
 	    ;;
     esac
 
-    variants_document > "${prefix}/etc/macports/variants.conf"
-    sources_document > "${prefix}/etc/macports/sources.conf"
+    for file in variants sources; do
+	source="${prefix}/etc/gha-install-macports/${file}.conf"
+	destination="${prefix}/etc/macports/${file}.conf"
+	if [ -f "${source}" ]; then
+	    cp -f "{source}" "${destination}"
+	fi
+    done
 }
 
 main "$@"

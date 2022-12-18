@@ -9,15 +9,16 @@ jobs:
     name: Install MacPorts 2.8.0 on MacOS 11
     steps:
       - uses: actions/checkout@v3
-      - uses: melusina-org/gha-install-macports@main
+      - uses: ./
         id: 'macports'
         with:
-          disable: >-
-            x11
-          enable: >-
-            aqua
-          ports: >-
-            sbcl +fancy
+          variants: 'testsuite/run-testsuite-on-macos-11/variants.conf'
+          ports: 'testsuite/run-testsuite-on-macos-11/ports.conf'
+      - name: 'Print Configuration Files'
+        run: >-
+          sudo find ${{ steps.macports.outputs.prefix }}/etc/gha-install-macports
+          -type f
+          -exec awk 'FNR == 1 {printf("\n\nFilename: %s\n", FILENAME)} {print}' '{}' '+'          
       - name: 'Validate installed MacPorts version'
         run: >-
           test "$(port version)" = 'Version: 2.8.0'
@@ -33,5 +34,5 @@ jobs:
     name: Install MacPorts 2.8.0 on MacOS 12
     steps:
       - uses: actions/checkout@v3
-      - uses: melusina-org/gha-install-macports@main
+      - uses: ./
       - run: port version

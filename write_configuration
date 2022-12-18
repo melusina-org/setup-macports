@@ -16,14 +16,38 @@
 usage()
 {
     cat <<'EOF'
-Usage: write_configuration PATHNAME CONTENTS
+Usage: write_configuration [-F|-S] PATHNAME CONTENTS
  Write configuration CONTENTS to PATHNAME.
+Options:
+ -S Handle CONTENTS as a string to write into PATHNAME.
+ -P Handle CONTENTS as the pathname of a file to copy onto
+    PATHNAME, unless this pathname does not designate any file.
 EOF
 }
 
 main()
 {
-    local filename contents dirname
+    local OPTARG OPTIND OPTION
+    local filename contents dirname content_type
+
+    content_type='string'
+    while getopts 'SP' OPTION; do
+	case "${OPTION}" in
+	    S)
+		content_type='string'
+		;;
+	    P)
+		content_type='pathname'
+		;;
+	    *)
+		1>&2 printf 'Failure: %s: Unsupported option..\n' "${OPTION}"
+		usage
+		exit 64
+		;;
+	esac
+    done
+
+    shift $((OPTIND - 1))
 
     case "$#" in
 	2)
@@ -46,8 +70,22 @@ main()
 	install -d -o root -g wheel -m 700 "${dirname}"
     fi
 
-    install -o root -g wheel -m 644 /dev/null "${filename}"
-    printf '%s' "${contents}" > "${filename}"
+    if [ "${content_type}" = 'string' ]; then
+	install -o root -g wheel -m 644 /dev/null "${filename}"
+	printf '%s' "${contents}" > "${filename}"
+    elif [ "${content_type}" = 'pathname' -a -f "${contents}" ]; then
+	install -o root -g wheel -m 644 /dev/null "${filename}"
+	cp -f "${contents}" "${filename}"
+    elif [ "${content_type}" = 'pathname' ]; then
+	case "${contents}" in
+	    .github/gha-install-macports/*.conf)
+		:
+		;;
+	    *)
+		1>&2 printf 'Failure: %s: File not found.\n' "${contents}"
+		exit 1
+	esac
+    fi
 }
 
 main "$@"

@@ -2,93 +2,71 @@ name: 'Install MacPorts'
 description: >-
   Install MacPorts on a Mac OS runner.
 inputs:
-  version:
-    description: >-
-      The MacPorts Version to install.
-    required: true
-    default: '2.8.0'
-  variants:
-    description: >-
-      Pathname of the variants configuration file to use.
-      If the no file exists under this pathname, an information
-      message is printed and the variants file installed by MacPorts
-      is left untouched.
+  configuration:
+    description: |
+      Pathname to a configuration file for the GHA-INSTALL-MACPORTS
+      action. When no pathname is provided, the configuration is
+      expected to be found under
+      
+        .github/configuration/gha-install-macports.yaml
 
-      See Also: variants.conf(5)
-    required: true
-    default: '.github/gha-install-macports/variants.conf'
-  sources:
-    description: >-
-      Pathname of the sources configuration file to use.
-      If the no file exists under this pathname, an information
-      message is printed and the variants file installed by MacPorts
-      is left untouched.
+      It is however no error when this file is not present.
+      
+      The configuration file is in YAML and has the following format:
 
-      See Also: sources.conf(5)
-    required: true
-    default: '.github/gha-install-macports/sources.conf'
-  ports:
-    description: >-
-      Pathname of the ports configuration file to use.
+        version: '2.8.0'
+          The MacPorts version to install.
+        prefix: '/opt/local'
+          The installation prefix to install MacPortd to.
+          Currently the only supported value is '/opt/local'.
+        variants.select: []
+          The list of selected variants in the global variants
+          configuration.
 
-      Each line in the file is a port specification for the port
-      install action.
+          See Also variants.conf(5).
 
-      If the no file exists under this pathname, an information
-      message is printed and no supplementary port is installed.
+        variants.deselect: []
+          The list of deselected variants in the global variants
+          configuration.
+
+          See Also: variants.conf(5).
+          
+        sources: ['rsync://rsync.macports.org/macports/release/tarballs/ports.tar']
+          The list of source locations for port definitions. The first
+          entry of the list is marked with default.
+
+          See Also: sources.conf(5)
+
+        ports: []
+           The list of additional ports to install. Each term of the
+           list is a dictionart with the mandatory 'name' holding the name
+           of the port to install, optional key 'select' for the list of
+           selected variants for this port, and the optional 'key'
+           deselect for the list of deselected variants for this port.
     required: true
-    default: '.github/gha-install-macports/ports.conf'
-  prefix:
-    description: >-
-      Installation prefix. Currently the only supported value is '/opt/local'
-    required: false
-    default: '/opt/local'
+    value: ':no-value'
 outputs:
-  version:
-    value: ${{ steps.store-macports-outputs.outputs.version }}
+  package:
+    value: ${{ steps.install-macports.outputs.package }}
     description: >-
-      The MacPorts version installed.
+      The URL of the package used for the MacPorts installation.
   prefix:
-    value: ${{ steps.store-macports-outputs.outputs.prefix }}
+    value: ${{ steps.install-macports.outputs.prefix }}
     description: >-
       The installation prefix for the MacPorts installation.
+  version:
+    value: ${{ steps.install-macports.outputs.version }}
+    description: >-
+      The MacPorts version installed.
 runs:
   using: 'composite'
   steps:
     - name: 'Validate Inputs'
       shell: sh
       run: |
-        ${{ github.action_path }}/validate_prefix "${{ inputs.prefix }}"
+        ${{ github.action_path }}/validate_configuration "${{ inputs.configuration }}"
     - name: 'Install MacPorts'
-      shell: sh
-      run: ${{ github.action_path }}/install_macports ${{ inputs.version }}
-    - name: 'Write Configuration files'
+      id: install-macports
       shell: sh
       run: |
-        sudo ${{ github.action_path }}/write_configuration -S "${{ inputs.prefix }}/etc/gha-install-macports/version.conf" "${{ inputs.version }}"
-        sudo ${{ github.action_path }}/write_configuration -P "${{ inputs.prefix }}/etc/gha-install-macports/variants.conf" "${{ inputs.variants }}"
-        sudo ${{ github.action_path }}/write_configuration -P "${{ inputs.prefix }}/etc/gha-install-macports/sources.conf" "${{ inputs.sources }}"
-        sudo ${{ github.action_path }}/write_configuration -P "${{ inputs.prefix }}/etc/gha-install-macports/ports.conf" "${{ inputs.ports }}"
-        sudo ${{ github.action_path }}/write_configuration -S "${{ inputs.prefix }}/etc/gha-install-macports/prefix.conf" "${{ inputs.prefix }}"
-    - name: 'Configure MacPorts'
-      shell: sh
-      run: |
-        sudo ${{ github.action_path }}/configure_macports
-    - name: 'Add MacPorts to PATH'
-      shell: sh
-      run: |
-        printf '${{ inputs.prefix }}/bin\n' >> $GITHUB_PATH
-        printf '${{ inputs.prefix }}/sbin\n' >> $GITHUB_PATH
-    - name: 'Install Additional Ports'
-      if: (inputs.ports != '')
-      shell: sh
-      run: |
-        if [ -f "${{ inputs.ports }}" ]; then
-          sudo xargs port install < "${{ inputs.ports }}"
-        fi
-    - name: 'Store MacPorts Output'
-      id: store-macports-outputs
-      shell: sh
-      run: |-
-        printf 'prefix=%s\n' "${{ inputs.prefix }}" >> $GITHUB_OUTPUT
-        printf 'version=%s\n' "${{ inputs.version }}" >> $GITHUB_OUTPUT
+        ${{ github.action_path }}/install_macports "${{ inputs.configuration }}"

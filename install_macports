@@ -13,11 +13,60 @@
 # you should have received as part of this distribution. The terms
 # are also available at https://opensource.org/licenses/MIT
 
-version='2.8.0'
-
 github_owner='macports'
 github_repo='macports-base'
 
+prefix='/opt/local'
+version='2.8.0'
+
+wlog()
+{
+    {
+	printf '%s: ' "$1"
+	shift
+	printf "$@"
+	printf '\n'
+    } 1>&2
+}
+
+failwith()
+{
+    local OPTIND OPTION OPTARG status
+
+    status=1
+    OPTIND=1
+
+    while getopts 'x:' OPTION; do
+        case ${OPTION} in
+            x)	status="${OPTARG}";;
+            *)	1>&2 printf 'failwith: %s: Unsupported option.\n' "${OPTION}";;
+        esac
+    done
+
+    shift $(expr ${OPTIND} - 1)
+
+    case "$1" in
+	[0-9][0-9][0-9]|[0-9][0-9]|[0-9])
+	    status="$1"
+	    shift
+	    ;;
+	*)
+	    :
+    esac
+
+    wlog 'Error' "$@"
+    exit "${status}"
+}
+
+with_group_presentation()
+(
+    if [ "${GITHUB_ACTIONS}" = 'true' ]; then    
+	trap "printf '::endgroup::\n'" INT TERM EXIT 
+	printf '::group::%s\n' "$1"
+    fi
+    shift
+    "$@"
+)
 
 github_api()
 (
@@ -199,10 +248,14 @@ END {
 
 usage()
 {
-    cat <<'EOF'
-Usage: install_macos [VERSION]
+    if [ "$#" -gt 0 ]; then
+	wlog 'Failure' "$@"
+    fi
+    cat 1>&2 <<'EOF'
+Usage: install_macports [VERSION-OR-PATHNAME]
  Install MacPorts
 EOF
+    exit 64
 }
 
 ensure_macos()
@@ -213,38 +266,191 @@ ensure_macos()
 	    ;;
     esac
 
-    1>&2 printf 'Failure: \047%s\047 is not a MacOS platform.\n' $(uname) 
+    failwith '\047%s\047 is not a MacOS platform.\n' $(uname) 
     exit 1
 }
 
+configuration_summary()
+{
+    cat <<SUMMARY
+Package: ${package}
+Prefix: ${prefix}
+Version: ${version}
+SUMMARY
+}
+
+fetch_and_install_package()
+{
+    local pathname package
+    package="$1"
+    pathname="./${package##*/}"
+    
+    curl -L -o  "${pathname}" "${package}"
+    sudo installer -pkg "${pathname}" -target /
+}
+
+write_configuration()
+{
+    local pathname
+    pathname="${prefix}/etc/gha-install-macports.yaml"
+
+    sudo install -d -o root -g wheel -m 755 $(dirname "${pathname}")
+    sudo install -o root -g wheel -m 644 /dev/null "${pathname}"
+
+    if [ -f "$1" -a -r "$1" ]; then
+	sudo cp -f "$1" "${pathname}"
+    elif [ "$1" = ':no-value' ]; then
+	sudo sh -c "cat > \"${pathname}\"" <<YAML
+version: '${version}'
+prefix: '${prefix}'
+YAML
+    else
+	failwith '%s: Not a regular and readable file.' "$1"
+    fi    
+}
+
+variants_document()
+{
+    printf '# MacPorts system-wide global variants configuration file.\n'
+    yq '
+.variants // {}
+| ( .select = .select // [] )
+| ( .select = select(.select | type == "!!seq").select // [.select] )
+| ( .deselect = .deselect // [] )
+| ( .deselect = select(.deselect | type == "!!seq").deselect // [.deselect] ) 
+| (
+    (.select | .[] | "+" + . ),
+    (.deselect | .[] | "-" + . )
+  )
+' < "$1"
+}
+
+ports_document()
+{
+    yq '
+.ports // {} | .[] 
+| ( .select = .select // [] )
+| ( .select = select(.select | type == "!!seq").select // [.select] )
+| ( .select = (.select | map("+" + . ) | join(" ")))
+| ( .deselect = .deselect // [] )
+| ( .deselect = select(.deselect | type == "!!seq").deselect // [.deselect] ) 
+| ( .deselect = (.deselect | map("-" + . ) | join(" ")))
+| ( [ .name, .select, .deselect ] | join (" "))
+' < "$1"
+}
+
+sources_document()
+{
+    yq '
+.sources // ["rsync://rsync.macports.org/macports/release/tarballs/ports.tar"]
+| ( .[0] = .[0] + " [default]")
+| .[]
+' < "$1"
+}
+
+write_variants()
+{
+    sudo install -o root -g wheel -m 644 /dev/null "${prefix}/etc/macports/variants.conf"
+    variants_document "$1" | sudo sh -c "cat > \"${prefix}/etc/macports/variants.conf\"" 
+}
+
+write_sources()
+{
+    sudo install -o root -g wheel -m 644 /dev/null "${prefix}/etc/macports/sources.conf"
+    sources_document "$1" | sudo sh -c "cat > \"${prefix}/etc/macports/sources.conf\"" 
+}
+
+setup_path()
+{
+    sudo install -o root -g wheel -m 644 /dev/null /etc/paths.d/900-macports
+    sudo sh -c "printf '%s/bin\n/' ${prefix} > /etc/paths.d/900-macports" 
+    sudo sh -c "printf '%s/sbin\n/' ${prefix} > /etc/paths.d/900-macports"
+    PATH="${prefix}/bin:${prefix}/sbin:${PATH}"
+}
+
+install_ports()
+{
+    ports_document "$1" | sudo xargs -J '%' port install '%'
+}
+
+experimental()
+{
+    :
+}
 
 main()
 {
-    local macos version package
+    local OPTIND OPTION OPTARG
+    local macos package action
+
     ensure_macos
-
+    action='install'
     macos=$(probe_macos)
+    OPTIND=1
+    while getopts 'nx' OPTION; do
+        case ${OPTION} in
+            n)
+		action='summary'
+		;;
+            x)
+		action='experimental'
+		;;
+            *)
+		usage '\047%s\047 Unsupported option.' "${OPTION}"
+		;;
+        esac
+    done
 
+    shift $(expr ${OPTIND} - 1)
+    
     case "$#" in
 	0)
 	    :
 	    ;;
 	1)
-	    version="$1"
+	    if [ -r "$1" ]; then
+		version=$(yq ".version // \"${version}\"" < "$1")
+		prefix=$(yq ".prefix // \"${prefix}\"" < "$1")
+	    elif [ "$1" = ':no-value' ]; then
+		:
+	    else
+		version="$1"
+	    fi
 	    ;;
 	*)
-	    1>&2 printf 'Failure: Too many arguments.\n'
-	    usage
-	    exit 64
+	    usage 'Too many arguments.'
 	    ;;
     esac
-
+ 
     package=$(make_package "${macos}" "${version}")
 
-    curl -L -o "./${package##*/}" "${package}"
-    sudo installer -pkg "./${package##*/}" -target /
-    sudo install -o root -g wheel -m 644 /dev/null /etc/paths.d/900-macports
-    sudo sh -c "printf '/opt/local/bin' > /etc/paths.d/900-macports"
+    if [ "${action}" = 'experimental' ]; then
+	experimental "$@"
+	exit 0
+    fi
+
+    with_group_presentation\
+	'Configuration Summary'\
+	configuration_summary
+
+    if [ "${action}" = 'summary' ]; then
+	exit 0
+    fi
+
+    setup_path
+    fetch_and_install_package "${package}"
+    write_configuration "$1"
+    write_variants "${prefix}/etc/gha-install-macports.yaml"
+    write_sources "${prefix}/etc/gha-install-macports.yaml"
+    install_ports "${prefix}/etc/gha-install-macports.yaml"
+
+    if [ "${GITHUB_ACTIONS}" = 'true' ]; then    
+        printf '%s/bin\n' "${prefix}" >> "${GITHUB_PATH}"
+        printf '%s/sbin\n' "${prefix}" >> "${GITHUB_PATH}"
+        printf 'package=%s\n' "${package}" >> "${GITHUB_OUTPUT}"
+	printf 'prefix=%s\n' "${prefix}" >> "${GITHUB_OUTPUT}"
+        printf 'version=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
+    fi
 }
 
 main "$@"

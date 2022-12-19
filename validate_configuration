@@ -1,0 +1,80 @@
+#!/bin/sh
+
+# validate_configuration — Validate Configuration
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+wlog()
+{
+    {
+	printf '%s: ' "$1"
+	shift
+	printf "$@"
+	printf '\n'
+    } 1>&2
+}
+
+failwith()
+{
+    local OPTIND OPTION OPTARG status
+
+    status=1
+    OPTIND=1
+
+    while getopts 'x:' OPTION; do
+        case ${OPTION} in
+            x)	status="${OPTARG}";;
+            *)	1>&2 printf 'failwith: %s: Unsupported option.\n' "${OPTION}";;
+        esac
+    done
+
+    shift $(expr ${OPTIND} - 1)
+
+    case "$1" in
+	[0-9][0-9][0-9]|[0-9][0-9]|[0-9])
+	    status="$1"
+	    shift
+	    ;;
+	*)
+	    :
+    esac
+
+    wlog 'Error' "$@"
+    exit "${status}"
+}
+
+main()
+{
+    if [ "$#" -ne 1 ]; then
+	failwith 'Exactly one argument is required.'
+    fi
+
+    if [ "$1" = ':no-value' ]; then
+	return 0
+    fi
+
+    if [ ! -f "$1" ]; then
+	failwith 'The pathname \047%s\047 does not designate a regular file.' "$1"
+    fi
+
+    if [ ! -r "$1" ]; then
+	failwith 'The pathname \047%s\047 does not designate a readable file.' "$1"
+    fi
+
+    if ! [ $(yq '.prefix' "$1") = '/opt/local' ]; then
+	failwith 'The only supported prefix is \047/opt/local\047.'
+    fi
+}
+
+main "$@"
+
+# End of file `validate_configuration'

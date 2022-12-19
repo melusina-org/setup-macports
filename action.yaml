@@ -44,7 +44,7 @@ inputs:
            selected variants for this port, and the optional 'key'
            deselect for the list of deselected variants for this port.
     required: true
-    value: ':no-value'
+    default: ':no-value'
 outputs:
   package:
     value: ${{ steps.install-macports.outputs.package }}

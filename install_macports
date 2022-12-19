@@ -403,7 +403,7 @@ main()
     done
 
     shift $(expr ${OPTIND} - 1)
-    
+
     case "$#" in
 	0)
 	    :

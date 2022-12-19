@@ -235,7 +235,6 @@ mode == "readdb" {
 
 }
 
- 
 END {
   if(version in macos) {
     print(macos[version])
@@ -277,23 +276,18 @@ configuration_summary()
 Package: ${package}
 Prefix: ${prefix}
 Version: ${version}
+Variants: $(variants_document)
+Ports: $(ports_document)
+Sources: $(sources_document)
+Path: ${PATH}
+Parameter File: ${parameterfile}
 SUMMARY
-}
-
-fetch_and_install_package()
-{
-    local pathname package
-    package="$1"
-    pathname="./${package##*/}"
-    
-    curl -L -o  "${pathname}" "${package}"
-    sudo installer -pkg "${pathname}" -target /
 }
 
 write_configuration()
 {
     local pathname
-    pathname="${prefix}/etc/gha-install-macports.yaml"
+    pathname="$2"
 
     sudo install -d -o root -g wheel -m 755 $(dirname "${pathname}")
     sudo install -o root -g wheel -m 644 /dev/null "${pathname}"
@@ -308,10 +302,28 @@ YAML
     else
 	failwith '%s: Not a regular and readable file.' "$1"
     fi    
+
+    with_group_presentation\
+	'Configuration Summary'\
+	configuration_summary
+}
+
+fetch_and_install_package()
+{
+    local pathname package
+    package="$1"
+    pathname="./${package##*/}"
+    
+    curl -L -o  "${pathname}" "${package}"
+    sudo installer -pkg "${pathname}" -target /
 }
 
 variants_document()
 {
+    if [ "$#" -eq 0 ]; then
+	set -- "${prefix}/etc/gha-install-macports.yaml"
+    fi
+
     printf '# MacPorts system-wide global variants configuration file.\n'
     yq '
 .variants // {}
@@ -328,6 +340,10 @@ variants_document()
 
 ports_document()
 {
+    if [ "$#" -eq 0 ]; then
+	set -- "${prefix}/etc/gha-install-macports.yaml"
+    fi
+
     yq '
 .ports // {} | .[] 
 | ( .select = .select // [] )
@@ -342,6 +358,10 @@ ports_document()
 
 sources_document()
 {
+    if [ "$#" -eq 0 ]; then
+	set -- "${prefix}/etc/gha-install-macports.yaml"
+    fi
+
     yq '
 .sources // ["rsync://rsync.macports.org/macports/release/tarballs/ports.tar"]
 | ( .[0] = .[0] + " [default]")
@@ -388,11 +408,8 @@ main()
     action='install'
     macos=$(probe_macos)
     OPTIND=1
-    while getopts 'nx' OPTION; do
+    while getopts 'x' OPTION; do
         case ${OPTION} in
-            n)
-		action='summary'
-		;;
             x)
 		action='experimental'
 		;;
@@ -414,7 +431,7 @@ main()
 	    elif [ "$1" = ':no-value' -a -f "${parameterfile}" -a -r "${parameterfile}" ]; then
 		wlog 'Info' 'Use parameter file \047%s\047.' "${parameterfile}"
 	    else
-		parameterfile=':none'
+		parameterfile=':no-value'
 	    fi
 	    ;;
 	*)
@@ -434,17 +451,9 @@ main()
 	exit 0
     fi
 
-    with_group_presentation\
-	'Configuration Summary'\
-	configuration_summary
-
-    if [ "${action}" = 'summary' ]; then
-	exit 0
-    fi
-
     setup_path
     fetch_and_install_package "${package}"
-    write_configuration "$1"
+    write_configuration "$1" "${prefix}/etc/gha-install-macports.yaml"
     write_variants "${prefix}/etc/gha-install-macports.yaml"
     write_sources "${prefix}/etc/gha-install-macports.yaml"
     install_ports "${prefix}/etc/gha-install-macports.yaml"

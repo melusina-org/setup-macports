@@ -1,0 +1,118 @@
+#!/bin/sh
+
+# identify_self — Identify Self
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+github_owner='macports'
+github_repo='macports-base'
+
+parameterfile='.github/parameters/gha-install-macports.yaml'
+prefix='/opt/local'
+version='2.8.0'
+
+wlog()
+{
+    {
+	printf '%s: ' "$1"
+	shift
+	printf "$@"
+	printf '\n'
+    } 1>&2
+}
+
+failwith()
+{
+    local OPTIND OPTION OPTARG status
+
+    status=1
+    OPTIND=1
+
+    while getopts 'x:' OPTION; do
+        case ${OPTION} in
+            x)	status="${OPTARG}";;
+            *)	1>&2 printf 'failwith: %s: Unsupported option.\n' "${OPTION}";;
+        esac
+    done
+
+    shift $(expr ${OPTIND} - 1)
+
+    case "$1" in
+	[0-9][0-9][0-9]|[0-9][0-9]|[0-9])
+	    status="$1"
+	    shift
+	    ;;
+	*)
+	    :
+    esac
+
+    wlog 'Error' "$@"
+    exit "${status}"
+}
+
+with_group_presentation()
+(
+    if [ "${GITHUB_ACTIONS}" = 'true' ]; then    
+	trap "printf '::endgroup::\n'" INT TERM EXIT 
+	printf '::group::%s\n' "$1"
+    fi
+    shift
+    "$@"
+)
+
+identify_source()
+{
+    local head
+    git_head()
+    (
+	cd "$1"
+	git rev-parse HEAD
+    )
+    cat <<EOF
+Git HEAD: $(git_head)
+EOF
+}
+
+identify_software()
+{
+    yq_version()
+    {
+	yq --version | sed -e 's/.*version *//'
+
+    }
+
+    jq_version()
+    {
+	jq --version | sed -e 's/jq-//'
+
+    }
+
+    cat <<EOF
+yq: $(yq_version)
+jq: $(jq_version)
+EOF
+}
+
+main()
+{
+    with_group_presentation\
+	'Identify Source'\
+	identify_source "$@"
+    with_group_presentation\
+	'Identify Software'\
+	identify_software "$@"
+}
+
+
+main "$@"
+
+# End of file `identify_self'

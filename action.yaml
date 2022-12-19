@@ -61,6 +61,10 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: 'Identify self'
+      shell: sh
+      run: |
+        ${{ github.action_path }}/identify_self "${{ github.action_path }}"
     - name: 'Validate Inputs'
       shell: sh
       run: |

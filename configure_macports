@@ -23,6 +23,41 @@ Usage: configure_macports
 EOF
 }
 
+ensure_macos()
+{
+    case $(uname) in
+       Darwin)
+           return 0
+           ;;
+    esac
+
+    1>&2 printf 'Failure: \047%s\047 is not a MacOS platform.\n' $(uname) 
+    exit 1
+}
+
+print_configuration_summary()
+{
+    find\
+	"${prefix}/etc/gha-install-macports"\
+	"${prefix}/etc/macports"\
+	-type f -not -name '*.default' -exec awk '
+FNR == 1 && NR > 1 {
+  printf("::endgroup::\n")
+}
+
+FNR == 1 {
+  printf("::group::Configuration File %s\n", FILENAME)
+}
+
+{print}
+
+END {
+  printf("::endgroup::\n")
+}
+' '{}' '+'          
+
+}
+
 main()
 {
     ensure_macos
@@ -45,6 +80,7 @@ main()
 	    cp -f "{source}" "${destination}"
 	fi
     done
+    print_configuration_summary
 }
 
 main "$@"

@@ -16,6 +16,7 @@
 github_owner='macports'
 github_repo='macports-base'
 
+parameterfile='.github/parameters/gha-install-macports.yaml'
 prefix='/opt/local'
 version='2.8.0'
 
@@ -408,20 +409,24 @@ main()
 	    :
 	    ;;
 	1)
-	    if [ -r "$1" ]; then
-		version=$(yq ".version // \"${version}\"" < "$1")
-		prefix=$(yq ".prefix // \"${prefix}\"" < "$1")
-	    elif [ "$1" = ':no-value' ]; then
-		:
+	    if [ -f "$1" -a -r "$1" ]; then
+		parameterfile="$1"
+	    elif [ "$1" = ':no-value' -a -f "${parameterfile}" -a -r "${parameterfile}" ]; then
+		wlog 'Info' 'Use parameter file \047%s\047.' "${parameterfile}"
 	    else
-		version="$1"
+		parameterfile=':none'
 	    fi
 	    ;;
 	*)
 	    usage 'Too many arguments.'
 	    ;;
     esac
- 
+
+    if [ -f "${parameterfile}" -a -r "${parameterfile}" ]; then
+	version=$(yq ".version // \"${version}\"" < "${parameterfile}")
+	prefix=$(yq ".prefix // \"${prefix}\"" < "${parameterfile}")
+    fi
+
     package=$(make_package "${macos}" "${version}")
 
     if [ "${action}" = 'experimental' ]; then

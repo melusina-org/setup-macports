@@ -453,7 +453,7 @@ main()
 
     setup_path
     fetch_and_install_package "${package}"
-    write_configuration "$1" "${prefix}/etc/gha-install-macports.yaml"
+    write_configuration "${parameterfile}" "${prefix}/etc/gha-install-macports.yaml"
     write_variants "${prefix}/etc/gha-install-macports.yaml"
     write_sources "${prefix}/etc/gha-install-macports.yaml"
     install_ports "${prefix}/etc/gha-install-macports.yaml"

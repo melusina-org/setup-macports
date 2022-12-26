@@ -26,7 +26,7 @@ configuration_summary()
     cat <<SUMMARY
 Package: $(make_package)
 Prefix: ${macports_prefix}
-Version: ${version}
+Version: ${macports_version}
 Variants: $(variants_document)
 Ports: $(ports_document)
 Sources: $(sources_document)
@@ -47,7 +47,7 @@ write_configuration()
 	cp -f "$1" "${pathname}"
     elif [ "$1" = ':no-value' ]; then
 	cat > "${pathname}" <<YAML
-version: "${version}"
+version: "${macports_version}"
 prefix: "${macports_prefix}"
 YAML
     else
@@ -131,11 +131,11 @@ make_package()
     case $# in
 	0)
 	    macos=$(probe_macos)
-	    version=$(yq ".version // \"${version}\"" < "${macports_prefix}/etc/gha-install-macports.yaml")
+	    version=$(yq ".version // \"${macports_version}\"" < "${macports_prefix}/etc/gha-install-macports.yaml")
 	    ;;
 	1)
 	    macos=$(probe_macos)
- 	    version=$(yq ".version // \"${version}\"" < "$1")
+ 	    version=$(yq ".version // \"${macports_version}\"" < "$1")
 	    ;;
 	2)
 	    macos="$1"

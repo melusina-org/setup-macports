@@ -22,7 +22,7 @@ macports_install()
 configuration_summary()
 {
     cat <<SUMMARY
-Package: ${package}
+Package: $(make_package)
 Prefix: ${prefix}
 Version: ${version}
 Variants: $(variants_document)

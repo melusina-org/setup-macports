@@ -2,13 +2,13 @@ name: 'Install MacPorts'
 description: >-
   Install MacPorts on a Mac OS runner.
 inputs:
-  configuration:
+  parameters:
     description: |
       Pathname to a configuration file for the GHA-INSTALL-MACPORTS
       action. When no pathname is provided, the configuration is
       expected to be found under
       
-        .github/configuration/gha-install-macports.yaml
+        .github/parameters/gha-install-macports.yaml
 
       It is however no error when this file is not present.
       
@@ -68,14 +68,14 @@ runs:
     - name: 'Validate Inputs'
       shell: sh
       run: |
-        ${{ github.action_path }}/validate_configuration "${{ inputs.configuration }}"
+        ${{ github.action_path }}/validate_configuration "${{ inputs.parameters }}"
     - name: 'Configure MacPorts'
       id: configure-macports
       shell: sh
       env:
         TOPLEVELDIR: ${{ github.action_path }}
       run: |
-        ${{ github.action_path }}/configure_macports "${{ inputs.configuration }}"
+        ${{ github.action_path }}/configure_macports "${{ inputs.parameters }}"
     - name: 'Cache MacPorts Installation'
       id: cache-macports
       uses: actions/cache@v3

@@ -200,6 +200,10 @@ main()
 	exit 0
     fi
 
+    with_group_presentation\
+	'Configuration Summary'\
+	configuration_summary
+
     fetch_and_install_package "$(make_package)"
     install_ports "${prefix}/etc/gha-install-macports.yaml"
 }

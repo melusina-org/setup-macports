@@ -24,7 +24,6 @@ github_owner='macports'
 github_repo='macports-base'
 
 parameterfile='.github/parameters/gha-install-macports.yaml'
-prefix='/opt/local'
 version='2.8.0'
 
 usage()
@@ -46,16 +45,16 @@ experimental()
 
 cache_key()
 {
-    openssl ripemd160 "${prefix}/etc/gha-install-macports.yaml"\
+    openssl ripemd160 "${macports_prefix}/etc/gha-install-macports.yaml"\
 	| awk -v "macos=${macos}" '{print(macos "-" $2)}'
 }
 
 setup_path()
 {
     sudo install -o root -g wheel -m 644 /dev/null /etc/paths.d/900-macports
-    sudo sh -c "printf '%s/bin\n/' ${prefix} > /etc/paths.d/900-macports" 
-    sudo sh -c "printf '%s/sbin\n/' ${prefix} > /etc/paths.d/900-macports"
-    PATH="${prefix}/bin:${prefix}/sbin:${PATH}"
+    sudo sh -c "printf '%s/bin\n/' ${macports_prefix} > /etc/paths.d/900-macports" 
+    sudo sh -c "printf '%s/sbin\n/' ${macports_prefix} > /etc/paths.d/900-macports"
+    PATH="${macports_prefix}/bin:${macports_prefix}/sbin:${PATH}"
 }
 
 main()
@@ -100,7 +99,7 @@ main()
 
     if [ -f "${parameterfile}" -a -r "${parameterfile}" ]; then
 	version=$(yq ".version // \"${version}\"" < "${parameterfile}")
-	prefix=$(yq ".prefix // \"${prefix}\"" < "${parameterfile}")
+	prefix=$(yq ".prefix // \"${macports_prefix}\"" < "${parameterfile}")
     fi
 
     if [ "${action}" = 'experimental' ]; then
@@ -109,22 +108,22 @@ main()
     fi
 
     setup_path
-    sudo install -d -o $(id -u -n) -g $(id -g -n) -m 755 "${prefix}"
-    write_configuration "${parameterfile}" "${prefix}/etc/gha-install-macports.yaml"
-    write_variants "${prefix}/etc/gha-install-macports.yaml"
-    write_sources "${prefix}/etc/gha-install-macports.yaml"
+    sudo install -d -o $(id -u -n) -g $(id -g -n) -m 755 "${macports_prefix}"
+    write_configuration "${parameterfile}" "${macports_prefix}/etc/gha-install-macports.yaml"
+    write_variants "${macports_prefix}/etc/gha-install-macports.yaml"
+    write_sources "${macports_prefix}/etc/gha-install-macports.yaml"
 
     if [ "${GITHUB_ACTIONS}" = 'true' ]; then
 	{
-	    printf 'prefix=%s\n' "${prefix}"
-	    printf 'parameters=%s\n' "${prefix}/etc/gha-install-macports.yaml"
+	    printf 'prefix=%s\n' "${macports_prefix}"
+	    printf 'parameters=%s\n' "${macports_prefix}/etc/gha-install-macports.yaml"
 	    printf 'cache-key=%sn\n' "$(cache_key)"
             printf 'package=%s\n' "$(make_package)"
             printf 'version=%s\n' "${version}"
 	} >> "${GITHUB_OUTPUT}"
         {
-	    printf '%s/bin\n' "${prefix}"
-            printf '%s/sbin\n' "${prefix}"
+	    printf '%s/bin\n' "${macports_prefix}"
+            printf '%s/sbin\n' "${macports_prefix}"
 	} >> "${GITHUB_PATH}"
     fi 
 }

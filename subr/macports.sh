@@ -13,6 +13,8 @@
 
 : ${macports_owner:=$(id -u -n)}
 : ${macports_group:=$(id -g -n)}
+: ${macports_version:='2.8.0'}
+: ${macports_prefix:='/opt/local'}
 
 macports_install()
 {
@@ -23,7 +25,7 @@ configuration_summary()
 {
     cat <<SUMMARY
 Package: $(make_package)
-Prefix: ${prefix}
+Prefix: ${macports_prefix}
 Version: ${version}
 Variants: $(variants_document)
 Ports: $(ports_document)
@@ -46,7 +48,7 @@ write_configuration()
     elif [ "$1" = ':no-value' ]; then
 	cat > "${pathname}" <<YAML
 version: "${version}"
-prefix: "${prefix}"
+prefix: "${macports_prefix}"
 YAML
     else
 	failwith '%s: Not a regular and readable file.' "$1"
@@ -60,7 +62,7 @@ YAML
 variants_document()
 {
     if [ "$#" -eq 0 ]; then
-	set -- "${prefix}/etc/gha-install-macports.yaml"
+	set -- "${macports_prefix}/etc/gha-install-macports.yaml"
     fi
 
     printf '# MacPorts system-wide global variants configuration file.\n'
@@ -80,7 +82,7 @@ variants_document()
 ports_document()
 {
     if [ "$#" -eq 0 ]; then
-	set -- "${prefix}/etc/gha-install-macports.yaml"
+	set -- "${macports_prefix}/etc/gha-install-macports.yaml"
     fi
 
     yq '
@@ -98,7 +100,7 @@ ports_document()
 sources_document()
 {
     if [ "$#" -eq 0 ]; then
-	set -- "${prefix}/etc/gha-install-macports.yaml"
+	set -- "${macports_prefix}/etc/gha-install-macports.yaml"
     fi
 
     yq '
@@ -110,16 +112,16 @@ sources_document()
 
 write_variants()
 {
-    macports_install -d -m 755 "${prefix}/etc/macports"
-    macports_install -m 644 /dev/null "${prefix}/etc/macports/variants.conf"
-    variants_document "$1" > "${prefix}/etc/macports/variants.conf"
+    macports_install -d -m 755 "${macports_prefix}/etc/macports"
+    macports_install -m 644 /dev/null "${macports_prefix}/etc/macports/variants.conf"
+    variants_document "$1" > "${macports_prefix}/etc/macports/variants.conf"
 }
 
 write_sources()
 {
-    macports_install -d -m 755 "${prefix}/etc/macports"
-    macports_install -m 644 /dev/null "${prefix}/etc/macports/sources.conf"
-    sources_document "$1" > "${prefix}/etc/macports/sources.conf"
+    macports_install -d -m 755 "${macports_prefix}/etc/macports"
+    macports_install -m 644 /dev/null "${macports_prefix}/etc/macports/sources.conf"
+    sources_document "$1" > "${macports_prefix}/etc/macports/sources.conf"
 }
 
 make_package()
@@ -129,7 +131,7 @@ make_package()
     case $# in
 	0)
 	    macos=$(probe_macos)
-	    version=$(yq ".version // \"${version}\"" < "${prefix}/etc/gha-install-macports.yaml")
+	    version=$(yq ".version // \"${version}\"" < "${macports_prefix}/etc/gha-install-macports.yaml")
 	    ;;
 	1)
 	    macos=$(probe_macos)

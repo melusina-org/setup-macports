@@ -24,7 +24,6 @@ github_owner='macports'
 github_repo='macports-base'
 
 parameterfile='.github/parameters/gha-install-macports.yaml'
-prefix='/opt/local'
 version='2.8.0'
 
 github_api()
@@ -153,9 +152,9 @@ fetch_and_install_package()
     curl -L -o  "${pathname}" "${package}"\
 	|| failwith 'Cannot download package \047%s\047' "${package}"
 
-    sudo install -d -o $(id -u -n) -g $(id -g -n) -m 755 "${prefix}"
+    sudo install -d -o $(id -u -n) -g $(id -g -n) -m 755 "${macports_prefix}"
     sudo installer -pkg "${pathname}" -target /
-    sudo chown -R $(id -u -n):$(id -g -n) "${prefix}"
+    sudo chown -R $(id -u -n):$(id -g -n) "${macports_prefix}"
 }
 
 install_ports()
@@ -205,7 +204,7 @@ main()
 	configuration_summary
 
     fetch_and_install_package "$(make_package)"
-    install_ports "${prefix}/etc/gha-install-macports.yaml"
+    install_ports "${macports_prefix}/etc/gha-install-macports.yaml"
 }
 
 main "$@"

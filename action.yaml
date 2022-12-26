@@ -1,6 +1,9 @@
 name: 'Install MacPorts'
 description: >-
   Install MacPorts on a Mac OS runner.
+branding:
+  icon: box
+  color: blue
 inputs:
   parameters:
     description: |

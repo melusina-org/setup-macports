@@ -47,15 +47,15 @@ inputs:
     default: ':no-value'
 outputs:
   package:
-    value: ${{ steps.install-macports.outputs.package }}
+    value: ${{ steps.configure-macports.outputs.package }}
     description: >-
       The URL of the package used for the MacPorts installation.
   prefix:
-    value: ${{ steps.install-macports.outputs.prefix }}
+    value: ${{ steps.configure-macports.outputs.prefix }}
     description: >-
       The installation prefix for the MacPorts installation.
   version:
-    value: ${{ steps.install-macports.outputs.version }}
+    value: ${{ steps.configure-macports.outputs.version }}
     description: >-
       The MacPorts version installed.
 runs:
@@ -69,8 +69,23 @@ runs:
       shell: sh
       run: |
         ${{ github.action_path }}/validate_configuration "${{ inputs.configuration }}"
-    - name: 'Install MacPorts'
-      id: install-macports
+    - name: 'Configure MacPorts'
+      id: configure-macports
       shell: sh
+      env:
+        TOPLEVELDIR: ${{ github.action_path }}
       run: |
-        ${{ github.action_path }}/install_macports "${{ inputs.configuration }}"
+        ${{ github.action_path }}/configure_macports "${{ inputs.configuration }}"
+    - name: 'Cache MacPorts Installation'
+      id: cache-macports
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.configure-macports.outputs.prefix }}
+        key: install-macports-${{ steps.configure-macports.outputs.cache-key }}
+    - name: 'Install MacPorts'
+      if: steps.cache-macports.outputs.cache-hit != 'true'
+      shell: sh
+      env:
+        TOPLEVELDIR: ${{ github.action_path }}
+      run: |
+        ${{ github.action_path }}/install_macports

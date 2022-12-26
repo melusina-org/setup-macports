@@ -96,9 +96,19 @@ identify_software()
 
     }
 
+    openssl_version()
+    {
+	if openssl version; then
+	    :
+	else
+	    printf ':not-found'
+	fi
+    }
+
     cat <<EOF
 yq: $(yq_version)
 jq: $(jq_version)
+openssl: $(openssl_version)
 EOF
 }
 

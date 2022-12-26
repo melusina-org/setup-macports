@@ -1,0 +1,146 @@
+#!/bin/sh
+
+# macos — Testsuite for MacOS functions
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+: ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
+: ${subrdir:=${TOPLEVELDIR}/subr}
+
+. "${subrdir}/stdlib.sh"
+. "${subrdir}/macos.sh"
+. "${subrdir}/testsuite.sh"
+
+assume_running_on_macos11()
+{
+    system_profiler()
+    (
+	cat <<'EOF'
+Software:
+
+    System Software Overview:
+
+      System Version: macOS 11.7.2 (20G1020)
+      Kernel Version: Darwin 20.6.0
+      Boot Volume: Macintosh HD
+      Boot Mode: Normal
+      Computer Name: Assume.local
+      User Name: runner (runner)
+      Secure Virtual Memory: Enabled
+      System Integrity Protection: Enabled
+      Time since boot: 3 minutes
+
+EOF
+	exit 0
+)
+
+    uname()
+    (
+	echo 'Darwin'
+	exit 0
+    )
+}
+
+assume_running_on_macos12()
+{
+    system_profiler()
+    (
+	cat <<'EOF'
+Software:
+
+    System Software Overview:
+
+      System Version: macOS 12.6.2 (21G320)
+      Kernel Version: Darwin 21.6.0
+      Boot Volume: Macintosh HD
+      Boot Mode: Normal
+      Computer Name: Assume.local
+      User Name: runner (runner)
+      Secure Virtual Memory: Enabled
+      System Integrity Protection: Enabled
+      Time since boot: 3 minutes
+
+EOF
+	exit 0
+    )
+
+    uname()
+    (
+	echo 'Darwin'
+	exit 0
+    )
+}
+
+assume_running_on_linux()
+{
+    system_profiler()
+    (
+	eprintf 'No such file or directory: system_profiler\n'
+	exit 127
+    )	
+
+    uname()
+    (
+	echo 'Linux'
+	exit 0
+    )
+    
+}
+
+assert_that_macos11_is_detected()
+(
+    assume_running_on_macos11
+    macos=$(probe_macos)
+    if (ensure_macos); then
+	macosp='true'
+    else
+	macosp='false'
+    fi
+    set -e
+    test "${macos}" = 'BigSur'
+    test "${macosp}" = 'true'
+)
+
+assert_that_macos12_is_detected()
+(
+    assume_running_on_macos12
+    macos=$(probe_macos)
+     if (ensure_macos); then
+	macosp='true'
+    else
+	macosp='false'
+    fi
+    set -e
+    test "${macos}" = 'Monterey'
+    test "${macosp}" = 'true'
+)
+
+assert_that_linux_is_detected()
+(
+    assume_running_on_linux
+    macos=$(probe_macos)
+    if (ensure_macos); then
+	macosp='true'
+    else
+	macosp='false'
+    fi
+    set -ex
+    test "${macos}" = ':not-found'
+    test "${macosp}" = 'false'
+)
+
+testsuite_main\
+    assert_that_macos11_is_detected\
+    assert_that_macos12_is_detected\
+    assert_that_linux_is_detected\
+
+# End of file `macos'

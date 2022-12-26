@@ -1,0 +1,134 @@
+#!/bin/sh
+
+# configure_macports — Configure MacPorts
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+: ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
+: ${subrdir:=${TOPLEVELDIR}/subr}
+
+. "${subrdir}/stdlib.sh"
+. "${subrdir}/macos.sh"
+. "${subrdir}/macports.sh"
+
+github_owner='macports'
+github_repo='macports-base'
+
+parameterfile='.github/parameters/gha-install-macports.yaml'
+prefix='/opt/local'
+version='2.8.0'
+
+usage()
+{
+    if [ "$#" -gt 0 ]; then
+	wlog 'Failure' "$@"
+    fi
+    cat 1>&2 <<'EOF'
+Usage: install_macports [VERSION-OR-PATHNAME]
+ Install MacPorts
+EOF
+    exit 64
+}
+
+experimental()
+{
+    :
+}
+
+cache_key()
+{
+    openssl ripemd160 "${prefix}/etc/gha-install-macports.yaml"\
+	| awk -v "macos=${macos}" '{print(macos "-" $2)}'
+}
+
+setup_path()
+{
+    sudo install -o root -g wheel -m 644 /dev/null /etc/paths.d/900-macports
+    sudo sh -c "printf '%s/bin\n/' ${prefix} > /etc/paths.d/900-macports" 
+    sudo sh -c "printf '%s/sbin\n/' ${prefix} > /etc/paths.d/900-macports"
+    PATH="${prefix}/bin:${prefix}/sbin:${PATH}"
+}
+
+main()
+{
+    local OPTIND OPTION OPTARG
+    local macos package action
+
+    ensure_macos
+    action='install'
+    macos=$(probe_macos)
+    OPTIND=1
+    while getopts 'x' OPTION; do
+        case ${OPTION} in
+            x)
+		action='experimental'
+		;;
+            *)
+		usage '\047%s\047 Unsupported option.' "${OPTION}"
+		;;
+        esac
+    done
+
+    shift $(expr ${OPTIND} - 1)
+
+    case "$#" in
+	0)
+	    :
+	    ;;
+	1)
+	    if [ -f "$1" -a -r "$1" ]; then
+		parameterfile="$1"
+	    elif [ "$1" = ':no-value' -a -f "${parameterfile}" -a -r "${parameterfile}" ]; then
+		wlog 'Info' 'Use parameter file \047%s\047.' "${parameterfile}"
+	    else
+		parameterfile=':no-value'
+	    fi
+	    ;;
+	*)
+	    usage 'Too many arguments.'
+	    ;;
+    esac
+
+    if [ -f "${parameterfile}" -a -r "${parameterfile}" ]; then
+	version=$(yq ".version // \"${version}\"" < "${parameterfile}")
+	prefix=$(yq ".prefix // \"${prefix}\"" < "${parameterfile}")
+    fi
+
+    if [ "${action}" = 'experimental' ]; then
+	experimental "$@"
+	exit 0
+    fi
+
+    setup_path
+    sudo install -d -o $(id -u -n) -g $(id -g -n) -m 755 "${prefix}"
+    write_configuration "${parameterfile}" "${prefix}/etc/gha-install-macports.yaml"
+    write_variants "${prefix}/etc/gha-install-macports.yaml"
+    write_sources "${prefix}/etc/gha-install-macports.yaml"
+
+    if [ "${GITHUB_ACTIONS}" = 'true' ]; then
+	{
+	    printf 'prefix=%s\n' "${prefix}"
+	    printf 'parameters=%s\n' "${prefix}/etc/gha-install-macports.yaml"
+	    printf 'cache-key=%sn\n' "$(cache_key)"
+            printf 'package=%s\n' "$(make_package)"
+            printf 'version=%s\n' "${version}"
+	} >> "${GITHUB_OUTPUT}"
+        {
+	    printf '%s/bin\n' "${prefix}"
+            printf '%s/sbin\n' "${prefix}"
+	} >> "${GITHUB_PATH}"
+    fi 
+}
+
+main "$@"
+
+# End of file `configure_macports'

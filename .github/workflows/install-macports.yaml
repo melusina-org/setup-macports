@@ -6,7 +6,33 @@ on:
 jobs:
   run-testsuite-on-macos-11:
     runs-on: macos-11
+    name: 'Run Testsuite on MacOS 11'
+    steps:
+      - uses: actions/checkout@v3
+      - name: 'Run testsuite'
+        run: development/testsuite
+
+  run-testsuite-on-macos-12:
+    runs-on: macos-12
+    name: 'Run Testsuite on MacOS 12'
+    steps:
+      - uses: actions/checkout@v3
+      - name: 'Run testsuite'
+        run: development/testsuite
+
+  run-testsuite-on-ubuntu:
+    runs-on: ubuntu-latest
+    name: 'Run testsuite on Ubuntu Latest'
+    steps:
+      - uses: actions/checkout@v3
+      - name: 'Run testsuite'
+        run: development/testsuite
+
+
+  install-macports-on-macos-11:
+    runs-on: macos-11
     name: 'Install MacPorts 2.8.0 on MacOS 11'
+    needs: 'run-testsuite-on-macos-11'
     steps:
       - uses: actions/checkout@v3
       - uses: ./
@@ -16,18 +42,21 @@ jobs:
       - name: 'Validate installed MacPorts version'
         run: >-
           test "$(port version)" = 'Version: 2.8.0'
-      - name: 'Validate installed MacPorts prefix'
+      - name: 'Validate transmitted MacPorts prefix'
         run: >-
           test "${{ steps.macports.outputs.prefix }}" = '/opt/local'
-      - name: 'Validate installed MacPorts version'
+      - name: 'Validate transmitted MacPorts version'
         run: >-
           test "${{ steps.macports.outputs.version }}" = '2.8.0'
 
-  run-testsuite-on-macos-12:
+  install-macports-on-macos-12:
     runs-on: macos-12
     name: 'Install MacPorts 2.8.0 on MacOS 12'
+    needs: 'run-testsuite-on-macos-12'
     steps:
       - uses: actions/checkout@v3
+      - name: 'Run testsuite'
+        run: development/testsuite
       - uses: ./
         with:
           configuration: 'testsuite/run-testsuite-on-macos-12.yaml'

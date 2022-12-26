@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# failwith — Testsuite for the failwith function
+
+# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
+# This file is part of Install MacPorts.
+#
+# Copyright © 2017–2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+: ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
+: ${subrdir:=${TOPLEVELDIR}/subr}
+
+. "${subrdir}/stdlib.sh"
+. "${subrdir}/testsuite.sh"
+
+assert_that_the_program_exits()
+(
+    (
+	failwith 'The last message.'
+	echo 'This message is not printed.'
+	exit 2
+    )
+    exitcode="$?"
+    set -e
+    test "${exitcode}" -eq 1
+    (
+	if grep 'This message is not printed' ../stdout; then
+	    false
+	else
+	    true
+	fi
+    )
+)
+
+assert_that_status_code_is_used()
+(
+    (
+	failwith 17 'The last message.'
+	echo 'This message is not printed.'
+	exit 2
+    )
+    exitcode="$?"
+    set -e
+    test "${exitcode}" -eq 17
+)
+
+testsuite_main\
+    assert_that_the_program_exits
+
+# End of file `failwith'

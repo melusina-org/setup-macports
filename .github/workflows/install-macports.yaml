@@ -28,7 +28,6 @@ jobs:
       - name: 'Run testsuite'
         run: development/testsuite
 
-
   install-macports-on-macos-11:
     runs-on: macos-11
     name: 'Install MacPorts 2.8.0 on MacOS 11'
@@ -55,9 +54,17 @@ jobs:
     needs: 'run-testsuite-on-macos-12'
     steps:
       - uses: actions/checkout@v3
-      - name: 'Run testsuite'
-        run: development/testsuite
       - uses: ./
         with:
           parameters: 'testsuite/run-testsuite-on-macos-12.yaml'
+      - name: 'Validate installed MacPorts version'
+        run: >-
+          test "$(port version)" = 'Version: 2.8.0'
+      - name: 'Validate transmitted MacPorts prefix'
+        run: >-
+          test "${{ steps.macports.outputs.prefix }}" = '/opt/local'
+      - name: 'Validate transmitted MacPorts version'
+        run: >-
+          test "${{ steps.macports.outputs.version }}" = '2.8.0'
       - run: port version
+

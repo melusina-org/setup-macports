@@ -41,7 +41,7 @@ to get started with GitHub workflows.
 
 The configuration file is in YAML and has the following format:
 
-* `version: '2.8.0'` — The MacPorts version to install.
+* `version: '2.8.1'` — The MacPorts version to install.
 * `prefix: '/opt/local'` — The installation prefix to install MacPorts to.
   Currently the only supported value is '/opt/local'.
 * `variants.select: []` — The list of selected variants in the global
@@ -81,7 +81,7 @@ on:
 jobs:
   install-macports-on-macos-11:
     runs-on: macos-11
-    name: 'Install MacPorts 2.8.0 on MacOS 11'
+    name: 'Install MacPorts 2.8.1 on MacOS 11'
     steps:
       - uses: actions/checkout@v3
       - uses: melusina-org/gha-install-macports@v1
@@ -90,17 +90,17 @@ jobs:
           parameters: 'testsuite/run-testsuite-on-macos-11.yaml'
       - name: 'Validate installed MacPorts version'
         run: >-
-          test "$(port version)" = 'Version: 2.8.0'
+          test "$(port version)" = 'Version: 2.8.1'
       - name: 'Validate transmitted MacPorts prefix'
         run: >-
           test "${{ steps.macports.outputs.prefix }}" = '/opt/local'
       - name: 'Validate transmitted MacPorts version'
         run: >-
-          test "${{ steps.macports.outputs.version }}" = '2.8.0'
+          test "${{ steps.macports.outputs.version }}" = '2.8.1'
 
   install-macports-on-macos-12:
     runs-on: macos-12
-    name: 'Install MacPorts 2.8.0 on MacOS 12'
+    name: 'Install MacPorts 2.8.1 on MacOS 12'
     steps:
       - uses: actions/checkout@v3
       - name: 'Run testsuite'
@@ -115,7 +115,7 @@ jobs:
 ## Example parameters
 
 ```yaml
-version: '2.8.0'
+version: '2.8.1'
 prefix: '/opt/local'
 variants:
   select:

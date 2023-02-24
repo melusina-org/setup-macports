@@ -13,7 +13,7 @@
 
 : ${macports_owner:=$(id -u -n)}
 : ${macports_group:=$(id -g -n)}
-: ${macports_version:='2.8.0'}
+: ${macports_version:='2.8.1'}
 : ${macports_prefix:='/opt/local'}
 
 macports_install()

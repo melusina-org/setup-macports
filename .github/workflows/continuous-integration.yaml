@@ -1,4 +1,4 @@
-name: 'Run Testsuite'
+name: 'Continuous Integration'
 on:
   - workflow_dispatch
   - push
@@ -47,6 +47,7 @@ jobs:
       - name: 'Validate transmitted MacPorts version'
         run: >-
           test "${{ steps.macports.outputs.version }}" = '2.8.1'
+      - run: port version
 
   install-macports-on-macos-12:
     runs-on: macos-12
@@ -55,6 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./
+        id: 'macports'
         with:
           parameters: 'testsuite/run-testsuite-on-macos-12.yaml'
       - name: 'Validate installed MacPorts version'

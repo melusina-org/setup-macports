@@ -4,69 +4,39 @@ on:
   - push
 
 jobs:
-  run-testsuite-on-macos-11:
-    runs-on: macos-11
-    name: 'Run Testsuite on MacOS 11'
+  run-testsuite:
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'macos-11', 'macos-12']
+    runs-on: '${{ matrix.os }}'
+    name: 'Run Testsuite'
     steps:
       - uses: actions/checkout@v3
       - name: 'Run testsuite'
         run: development/testsuite
 
-  run-testsuite-on-macos-12:
-    runs-on: macos-12
-    name: 'Run Testsuite on MacOS 12'
-    steps:
-      - uses: actions/checkout@v3
-      - name: 'Run testsuite'
-        run: development/testsuite
-
-  run-testsuite-on-ubuntu:
-    runs-on: ubuntu-latest
-    name: 'Run testsuite on Ubuntu Latest'
-    steps:
-      - uses: actions/checkout@v3
-      - name: 'Run testsuite'
-        run: development/testsuite
-
-  install-macports-on-macos-11:
-    runs-on: macos-11
-    name: 'Install MacPorts 2.8.1 on MacOS 11'
-    needs: 'run-testsuite-on-macos-11'
+  install-macports:
+    strategy:
+      matrix:
+        os: ['macos-11', 'macos-12']
+        version: ['2.8.1']
+        prefix: ['/opt/local']
+    runs-on: '${{ matrix.os }}'
+    name: 'Install MacPorts'
+    needs: 'run-testsuite'
     steps:
       - uses: actions/checkout@v3
       - uses: ./
         id: 'macports'
         with:
-          parameters: 'testsuite/run-testsuite-on-macos-11.yaml'
+          parameters: 'testsuite/run-testsuite-on-${{ matrix.os }}.yaml'
       - name: 'Validate installed MacPorts version'
         run: >-
-          test "$(port version)" = 'Version: 2.8.1'
+          test "$(port version)" = 'Version: ${{ matrix.version }}'
       - name: 'Validate transmitted MacPorts prefix'
         run: >-
-          test "${{ steps.macports.outputs.prefix }}" = '/opt/local'
+          test "${{ steps.macports.outputs.prefix }}" = '${{ matrix.prefix }}'
       - name: 'Validate transmitted MacPorts version'
         run: >-
-          test "${{ steps.macports.outputs.version }}" = '2.8.1'
+          test "${{ steps.macports.outputs.version }}" = '${{ matrix.version }}'
       - run: port version
-
-  install-macports-on-macos-12:
-    runs-on: macos-12
-    name: 'Install MacPorts 2.8.1 on MacOS 12'
-    needs: 'run-testsuite-on-macos-12'
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./
-        id: 'macports'
-        with:
-          parameters: 'testsuite/run-testsuite-on-macos-12.yaml'
-      - name: 'Validate installed MacPorts version'
-        run: >-
-          test "$(port version)" = 'Version: 2.8.1'
-      - name: 'Validate transmitted MacPorts prefix'
-        run: >-
-          test "${{ steps.macports.outputs.prefix }}" = '/opt/local'
-      - name: 'Validate transmitted MacPorts version'
-        run: >-
-          test "${{ steps.macports.outputs.version }}" = '2.8.1'
-      - run: port version
-

@@ -1,7 +1,7 @@
-;;;; org.melusina.gha-install-macports.asd — System definition Install Macports
+;;;; org.melusina.setup-macports.asd — System definition Install Macports
 
-;;;; Install MacPorts (https://github.com/melusina-org/gha-install-macports)
-;;;; This file is part of Install MacPorts.
+;;;; Melusina Actions (https://github.com/melusina-org/setup-macports)
+;;;; This file is part of Melusina Actions.
 ;;;;
 ;;;; Copyright © 2022–2023 Michaël Le Barbier
 ;;;; All rights reserved.
@@ -11,7 +11,7 @@
 ;;;; you should have received as part of this distribution. The terms
 ;;;; are also available at https://opensource.org/licenses/MIT
 
-(asdf:defsystem #:org.melusina.gha-install-macports/development
+(asdf:defsystem #:org.melusina.setup-macports/development
   :description "Development tools for the GitHub Action Install MacPorts"
   :author "Michaël Le Barbier"
   :license "MIT License"
@@ -20,4 +20,4 @@
   ((:module "libexec/lisp"
     :components ((:file "development")))))
 
-;;;; End of file `org.melusina.gha-install-macports.asd'
+;;;; End of file `org.melusina.setup-macports.asd'

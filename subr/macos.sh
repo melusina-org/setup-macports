@@ -1,7 +1,7 @@
 # macos.sh — Functions for MacOS
 
-# Install MacPorts (https://github.com/melusina-org/gha-install-macports)
-# This file is part of Install MacPorts.
+# Melusina Actions (https://github.com/melusina-org/setup-macports)
+# This file is part of Melusina Actions.
 #
 # Copyright © 2022–2023 Michaël Le Barbier
 # All rights reserved.

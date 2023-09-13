@@ -1,11 +1,11 @@
-# gha-install-macports
+# setup-macports
 
 This GitHub Action configure and installs MacPorts. It supports the
 selection and deselection of port variants, the use of supplementary
 port definitions sources, the installation of additional ports and the
 caching of an installation.
 
-[![Run Testsuite](https://github.com/melusina-org/gha-install-macports/actions/workflows/install-macports.yaml/badge.svg?branch=main)](https://github.com/melusina-org/gha-install-macports/actions/workflows/install-macports.yaml)
+[![Run Testsuite](https://github.com/melusina-org/setup-macports/actions/workflows/install-macports.yaml/badge.svg?branch=main)](https://github.com/melusina-org/setup-macports/actions/workflows/install-macports.yaml)
 
 
 ## Usage
@@ -30,10 +30,10 @@ to get started with GitHub workflows.
 
 ## Inputs
 
-* `parameters` — Pathname to a configuration file for the GHA-INSTALL-MACPORTS
+* `parameters` — Pathname to a configuration file for the SETUP-MACPORTS
    action. When no pathname is provided, the configuration is
    expected to be found under
-   `.github/parameters/gha-install-macports.yaml`.
+   `.github/parameters/setup-macports.yaml`.
    It is however no error when this file is not present.
 
 
@@ -84,7 +84,7 @@ jobs:
     name: 'Install MacPorts 2.8.1 on MacOS 11'
     steps:
       - uses: actions/checkout@v3
-      - uses: melusina-org/gha-install-macports@v1
+      - uses: melusina-org/setup-macports@v1
         id: 'macports'
         with:
           parameters: 'testsuite/run-testsuite-on-macos-11.yaml'
@@ -105,7 +105,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: 'Run testsuite'
         run: development/testsuite
-      - uses: melusina-org/gha-install-macports@v1
+      - uses: melusina-org/setup-macports@v1
         with:
           parameters: 'testsuite/run-testsuite-on-macos-12.yaml'
       - run: port version

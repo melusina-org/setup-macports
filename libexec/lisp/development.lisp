@@ -1,7 +1,7 @@
 ;;;; development.lisp — Project Development for Webmachine
 
-;;;; Install MacPorts (https://github.com/melusina-org/gha-install-macports)
-;;;; This file is part of Install MacPorts.
+;;;; Melusina Actions (https://github.com/melusina-org/setup-macports)
+;;;; This file is part of Melusina Actions.
 ;;;;
 ;;;; Copyright © 2022–2023 Michaël Le Barbier
 ;;;; All rights reserved.
@@ -13,14 +13,14 @@
 
 (require '#:org.melusina.atelier)
 
-(defpackage #:org.melusina.gha-install-macports/development
+(defpackage #:org.melusina.setup-macports/development
   (:use #:common-lisp)
   (:local-nicknames
    (#:atelier #:org.melusina.atelier))
   (:export
    #:lint))
 
-(in-package #:org.melusina.gha-install-macports/development)
+(in-package #:org.melusina.setup-macports/development)
 
 (defun system-relative-pathname (pathname)
   (flet ((system-source-directory ()
@@ -33,13 +33,13 @@
 (defparameter *parameter-bindings*
   '((:copyright-holder . "Michaël Le Barbier")
     (:copyright-year . "2022–2023")
-    (:project-filename . "gha-install-macports")
-    (:project-name . "Install MacPorts")
+    (:project-filename . "setup-macports")
+    (:project-name . "Melusina Actions")
     (:project-description . "GitHub Action to Install MacPorts")
     (:project-long-description .
      #.(concatenate 'string
 	"This GitHub Action is to install MacPorts."))
-    (:homepage . "https://github.com/melusina-org/gha-install-macports")
+    (:homepage . "https://github.com/melusina-org/setup-macports")
     (:license . :mit)))
 
 (defun lint ()
@@ -47,7 +47,7 @@
     (atelier:lint
      (system-relative-pathnames
       #p".github"
-      #p"org.melusina.gha-install-macports.asd"
+      #p"org.melusina.setup-macports.asd"
       #p"configure_macports"
       #p"development"
       #p"identify_self"

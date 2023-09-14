@@ -1,0 +1,13 @@
+version: '2.8.1'
+prefix: '/opt/local'
+variants:
+  select:
+    - aqua
+    - metal
+  deselect: x11
+ports:
+  - name: db48
+    deselect: [ java ]
+    select: [ tcl, universal ]
+  - name: gmp
+    select: native

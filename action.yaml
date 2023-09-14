@@ -1,6 +1,6 @@
-name: 'Install MacPorts'
+name: 'Setup MacPorts'
 description: >-
-  Install MacPorts on a Mac OS runner.
+  Configure and install MacPorts on a Mac OS runner.
 branding:
   icon: box
   color: blue

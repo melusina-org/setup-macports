@@ -1,4 +1,4 @@
-# setup-macports
+# Setup MacPorts on GitHub Runners
 
 This GitHub Action configure and installs MacPorts. It supports the
 selection and deselection of port variants, the use of supplementary

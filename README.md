@@ -5,8 +5,7 @@ selection and deselection of port variants, the use of supplementary
 port definitions sources, the installation of additional ports and the
 caching of an installation.
 
-[![Run Testsuite](https://github.com/melusina-org/setup-macports/actions/workflows/install-macports.yaml/badge.svg?branch=main)](https://github.com/melusina-org/setup-macports/actions/workflows/install-macports.yaml)
-
+[![Continuous Integration](https://github.com/melusina-org/setup-macports/actions/workflows/continuous-integration.yaml/badge.svg?branch=main)](https://github.com/melusina-org/setup-macports/actions/workflows/continuous-integration.yaml)
 
 ## Usage
 

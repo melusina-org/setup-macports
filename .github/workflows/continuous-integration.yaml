@@ -1,7 +1,11 @@
 name: 'Continuous Integration'
 on:
-  - workflow_dispatch
-  - push
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - v1
+    tags-ignore:
+      - v1.*
 
 jobs:
   run-testsuite:

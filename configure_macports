@@ -23,7 +23,8 @@
 github_owner='macports'
 github_repo='macports-base'
 
-parameterfile='.github/parameters/gha-install-macports.yaml'
+parameterfile='.github/parameters/setup-macports.yaml'
+parameterfile_compat='.github/parameters/gha-install-macports.yaml'
 
 usage()
 {
@@ -87,6 +88,9 @@ main()
 		parameterfile="$1"
 	    elif [ "$1" = ':no-value' -a -f "${parameterfile}" -a -r "${parameterfile}" ]; then
 		wlog 'Info' 'Use parameter file \047%s\047.' "${parameterfile}"
+	    elif [ "$1" = ':no-value' -a -f "${parameterfile_compat}" -a -r "${parameterfile_compat}" ]; then
+		wlog 'Info' 'Use parameter file \047%s\047.' "${parameterfile_compat}"
+		parameterfile="${parameterfile_compat}"
 	    else
 		parameterfile=':no-value'
 	    fi

@@ -15,7 +15,7 @@ jobs:
     runs-on: '${{ matrix.os }}'
     name: 'Run Testsuite'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: 'Run testsuite'
         run: development/testsuite
 
@@ -29,7 +29,7 @@ jobs:
     name: 'Install MacPorts'
     needs: 'run-testsuite'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./
         id: 'macports'
         with:

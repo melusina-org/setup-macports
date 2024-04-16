@@ -18,7 +18,7 @@ github_repo='macports-base'
 
 parameterfile='.github/parameters/gha-install-macports.yaml'
 prefix='/opt/local'
-version='2.8.1'
+version='2.9.3'
 
 wlog()
 {

@@ -39,6 +39,7 @@ known_macos_db()
 11-BigSur
 12-Monterey
 13-Ventura
+14-Sonoma
 EOF
 }
 

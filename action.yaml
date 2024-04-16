@@ -81,7 +81,7 @@ runs:
         ${{ github.action_path }}/configure_macports "${{ inputs.parameters }}"
     - name: 'Cache MacPorts Installation'
       id: cache-macports
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.configure-macports.outputs.prefix }}
         key: install-macports-${{ steps.configure-macports.outputs.cache-key }}

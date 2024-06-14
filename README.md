@@ -42,7 +42,8 @@ The configuration file is in YAML and has the following format:
 
 * `version: '2.9.3'` — The MacPorts version to install.
 * `prefix: '/opt/local'` — The installation prefix to install MacPorts to.
-  Currently the only supported value is '/opt/local'.
+  The default is `/opt/local` and only needs to be changed when
+  preparing self-install packages for instane.
 * `variants.select: []` — The list of selected variants in the global
   variants configuration. See Also variants.conf(5).
 * `variants.deselect: []` — The list of deselected variants in the

@@ -62,7 +62,7 @@ YAML
 variants_document()
 {
     if [ "$#" -eq 0 ]; then
-	set -- "${macports_prefix}/etc/gha-install-macports.yaml"
+	set -- "${macports_prefix}/etc/setup-macports.yaml"
     fi
 
     printf '# MacPorts system-wide global variants configuration file.\n'
@@ -82,7 +82,7 @@ variants_document()
 ports_document()
 {
     if [ "$#" -eq 0 ]; then
-	set -- "${macports_prefix}/etc/gha-install-macports.yaml"
+	set -- "${macports_prefix}/etc/setup-macports.yaml"
     fi
 
     yq '
@@ -100,7 +100,7 @@ ports_document()
 sources_document()
 {
     if [ "$#" -eq 0 ]; then
-	set -- "${macports_prefix}/etc/gha-install-macports.yaml"
+	set -- "${macports_prefix}/etc/setup-macports.yaml"
     fi
 
     yq '
@@ -131,7 +131,7 @@ make_package()
     case $# in
 	0)
 	    macos=$(probe_macos)
-	    version=$(yq ".version // \"${macports_version}\"" < "${macports_prefix}/etc/gha-install-macports.yaml")
+	    version=$(yq ".version // \"${macports_version}\"" < "${macports_prefix}/etc/setup-macports.yaml")
 	    ;;
 	1)
 	    macos=$(probe_macos)

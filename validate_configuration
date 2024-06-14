@@ -69,10 +69,6 @@ main()
     if [ ! -r "$1" ]; then
 	failwith 'The pathname \047%s\047 does not designate a readable file.' "$1"
     fi
-
-    if ! [ $(yq '.prefix' "$1") = '/opt/local' ]; then
-	failwith 'The only supported prefix is \047/opt/local\047.'
-    fi
 }
 
 main "$@"

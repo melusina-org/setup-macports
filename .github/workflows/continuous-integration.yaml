@@ -24,7 +24,11 @@ jobs:
       matrix:
         os: ['macos-12', 'macos-13', 'macos-14']
         version: ['2.9.3']
-        prefix: ['/opt/local']
+        prefix: ['local']
+        include:
+          - os: 'macos-14'
+            version: '2.9.3'
+            prefix: 'package'
     runs-on: '${{ matrix.os }}'
     name: 'Install MacPorts'
     needs: 'run-testsuite'
@@ -33,14 +37,15 @@ jobs:
       - uses: ./
         id: 'macports'
         with:
-          parameters: 'testsuite/run-testsuite-on-${{ matrix.os }}.yaml'
+          parameters: 'testsuite/run-testsuite-on-${{ matrix.os }}-${{ matrix.prefix }}.yaml'
       - name: 'Validate installed MacPorts version'
         run: >-
           test "$(port version)" = 'Version: ${{ matrix.version }}'
       - name: 'Validate transmitted MacPorts prefix'
         run: >-
-          test "${{ steps.macports.outputs.prefix }}" = '${{ matrix.prefix }}'
+          test "${{ steps.macports.outputs.prefix }}" = '/opt/${{ matrix.prefix }}'
       - name: 'Validate transmitted MacPorts version'
         run: >-
           test "${{ steps.macports.outputs.version }}" = '${{ matrix.version }}'
+      - run: /opt/${{ matrix.prefix }}/bin/port version
       - run: port version

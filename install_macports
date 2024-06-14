@@ -162,6 +162,24 @@ fetch_and_install_package()
     sudo chown -R $(id -u -n):$(id -g -n) "${macports_prefix}"
 }
 
+install_from_source()
+{
+    local srcdir
+    srcdir='/opt/local/src'
+    sudo install -d -o $(id -u -n) -g $(id -g -n) -m 755 "${srcdir}"
+    (
+	cd "${srcdir}"
+	git clone https://github.com/macports/macports-base.git
+	cd macports-base
+	git checkout "v${macports_version}"
+	./configure --enable-readline --prefix="${macports_prefix}"
+	make
+	sudo make install
+    )
+    sudo rm -Rf "${srcdir}"
+    sudo port -v selfupdate
+}
+
 install_ports()
 {
     ports_document "$1" | xargs -J '%' sudo port install '%'
@@ -208,8 +226,13 @@ main()
 	'Configuration Summary'\
 	configuration_summary
 
-    fetch_and_install_package "$(make_package)"
-    install_ports "${macports_prefix}/etc/gha-install-macports.yaml"
+    if [ "${macports_prefix}" = '/opt/local' ]; then
+	fetch_and_install_package "$(make_package)"
+    else
+	install_from_source
+    fi
+	
+    install_ports "${macports_prefix}/etc/setup-macports.yaml"
 }
 
 main "$@"

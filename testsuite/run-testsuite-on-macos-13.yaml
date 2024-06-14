@@ -11,3 +11,4 @@ ports:
     select: [ tcl, universal ]
   - name: gmp
     select: native
+  - name: dbus

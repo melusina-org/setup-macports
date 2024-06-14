@@ -5,3 +5,10 @@ variants:
     - aqua
     - metal
   deselect: x11
+ports:
+  - name: db48
+    deselect: [ java ]
+    select: [ tcl, universal ]
+  - name: gmp
+    select: native
+  - name: dbus

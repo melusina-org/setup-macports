@@ -164,7 +164,7 @@ fetch_and_install_package()
 
 install_ports()
 {
-    ports_document "$1" | xargs -J '%' port install '%'
+    ports_document "$1" | xargs -J '%' sudo port install '%'
 }
 
 experimental()

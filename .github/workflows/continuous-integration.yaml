@@ -34,18 +34,38 @@ jobs:
     needs: 'run-testsuite'
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./
         id: 'macports'
         with:
           parameters: 'testsuite/run-testsuite-on-${{ matrix.os }}-${{ matrix.prefix }}.yaml'
+
       - name: 'Validate installed MacPorts version'
         run: >-
           test "$(port version)" = 'Version: ${{ matrix.version }}'
+
       - name: 'Validate transmitted MacPorts prefix'
         run: >-
           test "${{ steps.macports.outputs.prefix }}" = '/opt/${{ matrix.prefix }}'
       - name: 'Validate transmitted MacPorts version'
         run: >-
           test "${{ steps.macports.outputs.version }}" = '${{ matrix.version }}'
+
       - run: /opt/${{ matrix.prefix }}/bin/port version
+
       - run: port version
+
+      - name: 'Create cURL package'
+        id: package
+        if: matrix.prefix == 'package'
+        run: |
+          sudo port mdmg curl
+          image=$(port work curl)/*.dmg
+          printf 'image=%s\n' "${image}" >> ${GITHUB_OUTPUT}
+
+      - name: 'Archive Installation Package Image'
+        if: matrix.prefix == 'package'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "curl"
+          path: "${{ steps.package.outputs.image }}"

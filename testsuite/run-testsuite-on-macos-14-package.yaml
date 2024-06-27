@@ -4,6 +4,7 @@ variants:
   select:
     - aqua
     - metal
+    - python312
   deselect: x11
 ports:
   - name: db48
@@ -12,4 +13,4 @@ ports:
   - name: gmp
     select: native
   - name: dbus
-
+  - name: curl

@@ -17,7 +17,7 @@ inputs:
       
       The configuration file is in YAML and has the following format:
 
-        version: '2.9.3'
+        version: '2.10.5'
           The MacPorts version to install.
         prefix: '/opt/local'
           The installation prefix to install MacPortd to.
@@ -48,6 +48,11 @@ inputs:
            deselect for the list of deselected variants for this port.
     required: true
     default: ':no-value'
+  enable-cache:
+    description: Enable caching of packages.
+    required: true
+    type: boolean
+    default: 'true'
 outputs:
   package:
     value: ${{ steps.configure-macports.outputs.package }}
@@ -80,6 +85,7 @@ runs:
       run: |
         ${{ github.action_path }}/configure_macports "${{ inputs.parameters }}"
     - name: 'Cache MacPorts Installation'
+      if: ${{ inputs.enable-cache == 'true' || ( inputs.enable-cache == true && inputs.enable-cache != 'false' ) }}
       id: cache-macports
       uses: actions/cache@v4
       with:

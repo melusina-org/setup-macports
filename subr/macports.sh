@@ -11,9 +11,11 @@
 # you should have received as part of this distribution. The terms
 # are also available at https://opensource.org/licenses/MIT
 
+macports_release_url=$(curl https://raw.githubusercontent.com/macports/macports-base/master/config/RELEASE_URL || curl https://trac.macports.org/export/HEAD/macports-base/config/RELEASE_URL || curl https://distfiles.macports.org/MacPorts/RELEASE_URL)
+
 : ${macports_owner:=$(id -u -n)}
 : ${macports_group:=$(id -g -n)}
-: ${macports_version:='2.9.3'}
+: ${macports_version:=$(echo $macports_release_url | awk -F'/v' '{ print $NF }')}
 : ${macports_prefix:='/opt/local'}
 
 macports_install()

@@ -95,6 +95,7 @@ runs:
       if: steps.cache-macports.outputs.cache-hit != 'true'
       shell: sh
       run: |
+        set -x
         ${{ github.action_path }}/install_macports
       env:
         TOPLEVELDIR: ${{ github.action_path }}

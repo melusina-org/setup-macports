@@ -15,12 +15,12 @@ jobs:
     runs-on: '${{ matrix.os }}'
     name: 'Run Testsuite'
     steps:
-      - name: 'Determine latest MacPorts Version'
-        id: latest-version
-        run: |
-          macports_release_url=$(curl https://raw.githubusercontent.com/macports/macports-base/master/config/RELEASE_URL || curl https://trac.macports.org/export/HEAD/macports-base/config/RELEASE_URL || curl https://distfiles.macports.org/MacPorts/RELEASE_URL)
-          echo "latest_version=$(echo $macports_release_url | awk -F'/v' '{ print $NF }')" >> $GITHUB_OUTPUT
-      
+#      - name: 'Determine latest MacPorts Version'
+#        id: latest-version
+#        run: |
+#          macports_release_url=$(curl https://raw.githubusercontent.com/macports/macports-base/master/config/RELEASE_URL || curl https://trac.macports.org/export/HEAD/macports-base/config/RELEASE_URL || curl https://distfiles.macports.org/MacPorts/RELEASE_URL)
+#          echo "latest_version=$(echo $macports_release_url | awk -F'/v' '{ print $NF }')" >> $GITHUB_OUTPUT
+#      
       - uses: actions/checkout@v4
       - name: 'Run testsuite'
         run: development/testsuite
@@ -30,17 +30,21 @@ jobs:
     strategy:
       matrix:
         os: ['macos-13', 'macos-14']
-        version: ['2.10.5']
         prefix: ['local']
         include:
-          - os: 'macos-13'
-            version: '${{ needs.run-testsuite.steps.latest-version.outputs.latest_version }}'
+          - os: 'macos-14'
             prefix: 'package'
 
     runs-on: '${{ matrix.os }}'
     name: 'Install MacPorts'
     steps:
       - uses: actions/checkout@v4
+      - name: 'Get version From parameters file'
+        id: parameters-version
+        run: |
+          version=$(yq ".version" < "testsuite/run-testsuite-on-${{ matrix.os }}-${{ matrix.prefix }}.yaml")
+          . "./subr/check_version.sh" "${version}"
+          echo "macports_version=${macports_version}" >> $GITHUB_OUTPUT
 
       - uses: ./
         id: 'macports'
@@ -48,15 +52,13 @@ jobs:
           parameters: 'testsuite/run-testsuite-on-${{ matrix.os }}-${{ matrix.prefix }}.yaml'
 
       - name: 'Validate installed MacPorts version'
-        run: >-
-          test "$(port version)" = 'Version: ${{ matrix.version }}'
+        shell: bash
+        run: |
+          test "$(port version)" = 'Version: ${{ steps.parameters-version.outputs.macports_version }}'
 
       - name: 'Validate transmitted MacPorts prefix'
         run: >-
           test "${{ steps.macports.outputs.prefix }}" = '/opt/${{ matrix.prefix }}'
-      - name: 'Validate transmitted MacPorts version'
-        run: >-
-          test "${{ steps.macports.outputs.version }}" = '${{ matrix.version }}'
 
       - run: /opt/${{ matrix.prefix }}/bin/port version
 

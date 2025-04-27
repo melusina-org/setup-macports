@@ -160,6 +160,11 @@ fetch_and_install_package()
     sudo install -d -o $(id -u -n) -g $(id -g -n) -m 755 "${macports_prefix}"
     sudo installer -pkg "${pathname}" -target /
     sudo chown -R $(id -u -n):$(id -g -n) "${macports_prefix}"
+    if [ "${selfupdate_macports}" = "true"]; then
+		sudo port -v selfupdate
+	else
+		sudo port -v sync
+	fi
 }
 
 install_from_source()
@@ -177,7 +182,11 @@ install_from_source()
 	sudo make install
     )
     sudo rm -Rf "${srcdir}"
-    sudo port -v selfupdate
+    if [ "${selfupdate_macports}" = "true"]; then
+		sudo port -v selfupdate
+	else
+		sudo port -v sync
+	fi
 }
 
 install_ports()

@@ -100,3 +100,4 @@ runs:
         TOPLEVELDIR: ${{ github.action_path }}
         macports_prefix: ${{ steps.configure-macports.outputs.prefix }}
         macports_version: ${{ steps.configure-macports.outputs.version }}
+        selfupdate_macports: ${{ steps.configure-macports.outputs.selfupdate_macports }}

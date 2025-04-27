@@ -101,8 +101,14 @@ main()
     esac
 
     if [ -f "${parameterfile}" -a -r "${parameterfile}" ]; then
-	macports_version=$(yq ".version // \"${macports_version}\"" < "${parameterfile}")
-	macports_prefix=$(yq ".prefix // \"${macports_prefix}\"" < "${parameterfile}")
+		macports_version=$(yq ".version // \"${macports_version}\"" < "${parameterfile}")
+		macports_prefix=$(yq ".prefix // \"${macports_prefix}\"" < "${parameterfile}")
+		selfupdate_macports="false"
+		if [ "${macports_version}" = "" ]; then
+			macports_release_url=$(curl https://raw.githubusercontent.com/macports/macports-base/master/config/RELEASE_URL || curl https://trac.macports.org/export/HEAD/macports-base/config/RELEASE_URL || curl https://distfiles.macports.org/MacPorts/RELEASE_URL)
+			macports_version="$(echo $macports_release_url | awk -F'/v' '{ print $NF }')"
+			selfupdate_macports="true"
+		fi
     fi
 
     if [ "${action}" = 'experimental' ]; then
@@ -123,6 +129,7 @@ main()
 	    printf 'cache-key=%sn\n' "$(cache_key)"
             printf 'package=%s\n' "$(make_package)"
             printf 'version=%s\n' "${macports_version}"
+            printf 'selfupdate_macports=%s\n' "${selfupdate_macports}"
 	} >> "${GITHUB_OUTPUT}"
         {
 	    printf '%s/bin\n' "${macports_prefix}"

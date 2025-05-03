@@ -101,9 +101,10 @@ main()
     esac
 
     if [ -f "${parameterfile}" -a -r "${parameterfile}" ]; then
-	macports_version=$(yq ".version // \"${macports_version}\"" < "${parameterfile}")
-	macports_prefix=$(yq ".prefix // \"${macports_prefix}\"" < "${parameterfile}")
-    fi
+		macports_version=$(yq ".version // \"${macports_version}\"" < "${parameterfile}")
+		macports_prefix=$(yq ".prefix // \"${macports_prefix}\"" < "${parameterfile}")
+		. "${subrdir}/check_version.sh" "${macports_version}"
+	fi
 
     if [ "${action}" = 'experimental' ]; then
 	experimental "$@"
@@ -123,6 +124,7 @@ main()
 	    printf 'cache-key=%sn\n' "$(cache_key)"
             printf 'package=%s\n' "$(make_package)"
             printf 'version=%s\n' "${macports_version}"
+            printf 'selfupdate_macports=%s\n' "${selfupdate_macports}"
 	} >> "${GITHUB_OUTPUT}"
         {
 	    printf '%s/bin\n' "${macports_prefix}"

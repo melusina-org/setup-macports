@@ -13,8 +13,11 @@
 
 : ${macports_owner:=$(id -u -n)}
 : ${macports_group:=$(id -g -n)}
-: ${macports_version:='2.9.3'}
 : ${macports_prefix:='/opt/local'}
+
+: ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
+: ${subrdir:=${TOPLEVELDIR}/subr}
+
 
 macports_install()
 {
@@ -142,9 +145,10 @@ make_package()
 	    version="$2"
 	    ;;
     esac
-    known_macos_db | awk -F'-' "-vmacos=${macos}" "-vversion=${version}" '
+    . "${subrdir}/check_version.sh" "${version}"
+    known_macos_db | awk -F'-' "-vmacos=${macos}" "-vversion=${macports_version}" '
 $2 == macos {
-  printf("https://github.com/macports/macports-base/releases/download/v%s/MacPorts-%s-%s-%s.pkg", version, version, $1, $2)
+	  printf("https://github.com/macports/macports-base/releases/download/v%s/MacPorts-%s-%s-%s.pkg", version, version, $1, $2)
 }
 '
 }

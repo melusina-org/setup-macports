@@ -34,6 +34,8 @@ to get started with GitHub workflows.
    expected to be found under
    `.github/parameters/setup-macports.yaml`.
    It is however no error when this file is not present.
+   
+* `cache` — Wether to `enable` (default) or `disable` the cache.
 
 
 ## Parameter file

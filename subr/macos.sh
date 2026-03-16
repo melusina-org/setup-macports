@@ -86,4 +86,19 @@ END {
 '
 }
 
+probe_architecture()
+{
+    case $(uname -m) in
+	arm64)
+	    echo "arm64"
+	    ;;
+	x86_64)
+	    echo "x86_64"
+	    ;;
+	*)
+	    echo "unknown"
+	    ;;
+    esac
+}
+
 # End of file `macos.sh'

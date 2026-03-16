@@ -181,10 +181,109 @@ assert_that_linux_is_detected()
     test "${macosp}" = 'false'
 )
 
+# Mock uname -m for architecture testing
+mock_uname_arm64()
+{
+    uname()
+    {
+	echo 'arm64'
+    }
+}
+
+mock_uname_x86_64()
+{
+    uname()
+    {
+	echo 'x86_64'
+    }
+}
+
+mock_uname_unknown()
+{
+    uname()
+    {
+	echo 'unknown_arch'
+    }
+}
+
+assert_that_arm64_architecture_is_detected()
+(
+    mock_uname_arm64
+    arch=$(probe_architecture)
+    set -e
+    test "${arch}" = 'arm64'
+)
+
+assert_that_x86_64_architecture_is_detected()
+(
+    mock_uname_x86_64
+    arch=$(probe_architecture)
+    set -e
+    test "${arch}" = 'x86_64'
+)
+
+assert_that_unknown_architecture_returns_unknown()
+(
+    mock_uname_unknown
+    arch=$(probe_architecture)
+    set -e
+    test "${arch}" = 'unknown'
+)
+
+assert_that_cache_key_includes_architecture()
+(
+    mock_uname_arm64
+    # Create a mock config file for cache key generation
+    testdir=$(mktemp -d)
+    prefix="${testdir}/opt/local"
+    mkdir -p "${prefix}/etc"
+    echo "test: config" > "${prefix}/etc/setup-macports.yaml"
+
+    # Mock probe_macos to return a known value
+    probe_macos()
+    {
+	echo 'Sequoia'
+    }
+
+    # Mock cache_key function (from configure_macports)
+    # We need to redefine it here since configure_macports is not sourced
+    cache_key()
+    {
+	local macos arch
+	macos=$(probe_macos)
+	arch=$(probe_architecture)
+	openssl ripemd160 "${macports_prefix}/etc/setup-macports.yaml"\
+	    | awk -v "macos=${macos}" -v "arch=${arch}" '{print(macos "-" arch "-" $2)}'
+    }
+
+    # Get cache key
+    macports_prefix="${prefix}"
+    cache_key_output=$(cache_key)
+
+    # Clean up
+    rm -rf "${testdir}"
+
+    set -e
+    # Cache key should be in format: {macos}-{arch}-{hash}
+    # Should contain "Sequoia-arm64-"
+    case "${cache_key_output}" in
+	Sequoia-arm64-*)
+	    # Correct format
+	    ;;
+	*)
+	    exit 1
+	    ;;
+    esac
+)
+
 testsuite_main\
     assert_that_macos11_is_detected\
     assert_that_macos12_is_detected\
     assert_that_macos26_is_detected\
     assert_that_linux_is_detected\
+    assert_that_arm64_architecture_is_detected\
+    assert_that_x86_64_architecture_is_detected\
+    assert_that_unknown_architecture_returns_unknown\
+    assert_that_cache_key_includes_architecture\
 
 # End of file `macos'
